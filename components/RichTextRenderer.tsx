@@ -79,10 +79,28 @@ function extractInstagramShortcode(url: string): string | null {
 
 function YouTubeEmbed({ videoId }: { videoId: string }) {
   const [loading, setLoading] = useState(true);
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe
+    src="https://www.youtube.com/embed/${videoId}?playsinline=1&origin=https://www.dailyinsight.co.uk"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+</body>
+</html>`;
   return (
     <View style={styles.youtubeContainer}>
       <WebView
-        source={{ uri: `https://www.youtube.com/embed/${videoId}?playsinline=1` }}
+        source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
         style={styles.webview}
         allowsFullscreenVideo
         mediaPlaybackRequiresUserAction={false}
