@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "DailyInsight",
+    "slug": "dailyinsight-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#C8102E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "backgroundColor": "#C8102E"
+    },
+    "android": {
+      "backgroundColor": "#C8102E",
+      "adaptiveIcon": {
+        "backgroundColor": "#C8102E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-image"
+    ]
+  }
+}
