@@ -82,16 +82,30 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
   const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; }
-    iframe { width: 100%; height: 100%; border: 0; display: block; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
   <iframe
-    src="https://www.youtube.com/embed/${videoId}?playsinline=1&origin=https://www.dailyinsight.co.uk"
+    src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&origin=https://www.dailyinsight.co.uk"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
   ></iframe>
@@ -104,8 +118,36 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
         style={styles.webview}
         allowsFullscreenVideo
         mediaPlaybackRequiresUserAction={false}
+        javaScriptEnabled={true}
+        cacheEnabled={true}
+        androidLayerType="hardware"
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
+        onShouldStartLoadWithRequest={(request) => {
+          const url = request.url;
+          // Allow the initial blank load and the injected HTML base
+          if (url === 'about:blank' || url.startsWith('https://www.dailyinsight.co.uk')) {
+            return true;
+          }
+          // Allow YouTube embed URLs
+          if (url.includes('youtube.com/embed')) {
+            return true;
+          }
+          // Allow Google domains needed for YouTube auth/tracking
+          if (url.includes('google.com')) {
+            return true;
+          }
+          // Block navigation to any full YouTube page (watch, shorts, home, mobile site)
+          if (
+            url.includes('youtube.com') ||
+            url.includes('youtu.be') ||
+            url.includes('m.youtube.com')
+          ) {
+            return false;
+          }
+          // Allow everything else (e.g. data: URIs, googlevideo.com for streaming)
+          return true;
+        }}
       />
       {loading && (
         <View style={styles.loadingOverlay}>
