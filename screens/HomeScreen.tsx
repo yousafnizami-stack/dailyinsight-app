@@ -26,8 +26,9 @@ interface Props {
   navigation: any;
 }
 
-// Categories shown in the "All" mixed section feed, in order
-const SECTION_CATEGORY_SLUGS = ['royals', 'celebrity', 'entertainment', 'music'];
+// Categories shown in the "All" mixed section feed, in order.
+// Mirrors NAV_CATEGORY_ORDER from lib/api.ts; 'tv' covers TV & Film (film slug is excluded/merged).
+const SECTION_CATEGORY_SLUGS = ['royals', 'celebrity', 'tv', 'music', 'entertainment'];
 
 interface Section {
   categorySlug: string;
