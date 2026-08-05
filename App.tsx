@@ -22,8 +22,10 @@ import { StyleSheet, Text, View } from 'react-native';
 function HomeHeaderTitle() {
   return (
     <View style={headerStyles.container}>
-      <Text style={headerStyles.wordmark}>DailyInsight</Text>
-      <Text style={headerStyles.tagline}>Your daily dose of royal &amp; celebrity news</Text>
+      <Text style={headerStyles.wordmarkRow}>
+        <Text style={headerStyles.wordmarkDaily}>Daily</Text>
+        <Text style={headerStyles.wordmarkInsight}>Insight</Text>
+      </Text>
     </View>
   );
 }
@@ -34,20 +36,25 @@ const headerStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 4,
   },
-  wordmark: {
+  wordmarkRow: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 34,
-    color: '#fff',
     lineHeight: 38,
     letterSpacing: 0.3,
   },
-  tagline: {
-    fontFamily: 'BarlowCondensed_600SemiBold',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.82)',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginTop: 1,
+  wordmarkDaily: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 34,
+    color: '#FFFFFF',
+    lineHeight: 38,
+    letterSpacing: 0.3,
+  },
+  wordmarkInsight: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 34,
+    color: '#D4AF37',
+    lineHeight: 38,
+    letterSpacing: 0.3,
   },
 });
 import HomeScreen from './screens/HomeScreen';

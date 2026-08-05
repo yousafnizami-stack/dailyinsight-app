@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -45,10 +45,23 @@ const SECTION_DEFS: { key: string; title: string; fetch: () => Promise<Article[]
   { key: 'tv',            title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
 ];
 
-function SectionHeader({ title }: { title: string }) {
+const CHIPS = SECTION_DEFS.map((s) => ({ key: s.key, label: s.title }));
+
+function SectionHeader({
+  title,
+  sectionKey,
+  onLayout,
+}: {
+  title: string;
+  sectionKey: string;
+  onLayout: (key: string, y: number) => void;
+}) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.sectionHeaderWrapper, { borderBottomColor: colors.accent }]}>
+    <View
+      style={[styles.sectionHeaderWrapper, { borderBottomColor: colors.accent }]}
+      onLayout={(e) => onLayout(sectionKey, e.nativeEvent.layout.y)}
+    >
       <Text style={[styles.sectionHeaderText, { color: colors.sectionHeader, fontFamily: Fonts.playfair }]}>
         {title}
       </Text>
@@ -64,6 +77,16 @@ export default function HomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [selectedChip, setSelectedChip] = useState<string>('latest');
+
+  // Ref for the main vertical ScrollView
+  const scrollViewRef = useRef<ScrollView>(null);
+  // Map of sectionKey -> Y position within the ScrollView content
+  const sectionYPositions = useRef<Record<string, number>>({});
+
+  const handleSectionLayout = useCallback((key: string, y: number) => {
+    sectionYPositions.current[key] = y;
+  }, []);
 
   // Reload saved IDs whenever the screen comes into focus
   useFocusEffect(
@@ -127,6 +150,18 @@ export default function HomeScreen({ navigation }: Props) {
     setRefreshing(false);
   }, [loadAllSections]);
 
+  const handleChipPress = useCallback((chipKey: string) => {
+    setSelectedChip(chipKey);
+    if (chipKey === 'latest') {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    } else {
+      const y = sectionYPositions.current[chipKey];
+      if (y !== undefined) {
+        scrollViewRef.current?.scrollTo({ y, animated: true });
+      }
+    }
+  }, []);
+
   if (loading) {
     return (
       <View style={[styles.centered, { flex: 1, backgroundColor: colors.background }]}>
@@ -153,26 +188,75 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingVertical: 8 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={colors.accent}
-          colors={[colors.accent]}
-        />
-      }
-    >
-      {sections.map((section) => (
-        <View key={section.key}>
-          <SectionHeader title={section.title} />
-          {section.articles.map((article, idx) => {
-            if (idx === 0) {
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Chip row — fixed above scroll content */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[styles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
+        contentContainerStyle={styles.chipRowContent}
+      >
+        {CHIPS.map((chip) => {
+          const isSelected = selectedChip === chip.key;
+          return (
+            <Pressable
+              key={chip.key}
+              onPress={() => handleChipPress(chip.key)}
+              style={[
+                styles.chip,
+                isSelected && styles.chipSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: isSelected ? '#C8102E' : colors.textMuted },
+                ]}
+              >
+                {chip.label.toUpperCase()}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Main content scroll view */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 8 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      >
+        {sections.map((section) => (
+          <View key={section.key}>
+            <SectionHeader
+              title={section.title}
+              sectionKey={section.key}
+              onLayout={handleSectionLayout}
+            />
+            {section.articles.map((article, idx) => {
+              if (idx === 0) {
+                return (
+                  <HeroCard
+                    key={article.id}
+                    article={article}
+                    onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
+                    showSaveButton
+                    saved={savedIds.has(article.id)}
+                    onSave={() => handleSave(article)}
+                  />
+                );
+              }
               return (
-                <HeroCard
+                <HorizontalCard
                   key={article.id}
                   article={article}
                   onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
@@ -181,22 +265,12 @@ export default function HomeScreen({ navigation }: Props) {
                   onSave={() => handleSave(article)}
                 />
               );
-            }
-            return (
-              <HorizontalCard
-                key={article.id}
-                article={article}
-                onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
-                showSaveButton
-                saved={savedIds.has(article.id)}
-                onSave={() => handleSave(article)}
-              />
-            );
-          })}
-          <View style={[styles.sectionDivider, { borderBottomColor: colors.border }]} />
-        </View>
-      ))}
-    </ScrollView>
+            })}
+            <View style={[styles.sectionDivider, { borderBottomColor: colors.border }]} />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -220,6 +294,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 15,
+  },
+  chipRow: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexGrow: 0,
+  },
+  chipRowContent: {
+    paddingHorizontal: 8,
+    paddingVertical: 0,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginHorizontal: 2,
+  },
+  chipSelected: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#C8102E',
+  },
+  chipText: {
+    fontFamily: 'BarlowCondensed_600SemiBold',
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   sectionHeaderWrapper: {
     marginHorizontal: 12,
