@@ -105,28 +105,38 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (!article) return;
     navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.headerRight}>
-          <Pressable
-            onPress={handleShare}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ backgroundColor: 'transparent' }}
-          >
-            <Ionicons name="share-outline" size={22} color="#fff" />
-          </Pressable>
-          <Pressable
-            onPress={handleSave}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ backgroundColor: 'transparent' }}
-          >
-            <Ionicons
-              name={saved ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color="#000000"
-            />
-          </Pressable>
-        </View>
-      ),
+      unstable_headerRightItems: () => [
+        {
+          type: 'custom' as const,
+          hidesSharedBackground: true,
+          element: (
+            <Pressable
+              onPress={handleShare}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ backgroundColor: 'transparent', paddingHorizontal: 4 }}
+            >
+              <Ionicons name="share-outline" size={22} color="#fff" />
+            </Pressable>
+          ),
+        },
+        {
+          type: 'custom' as const,
+          hidesSharedBackground: true,
+          element: (
+            <Pressable
+              onPress={handleSave}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ backgroundColor: 'transparent', paddingHorizontal: 4, marginLeft: 8 }}
+            >
+              <Ionicons
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={22}
+                color="#000000"
+              />
+            </Pressable>
+          ),
+        },
+      ],
     });
   }, [article, saved, handleSave, handleShare, navigation]);
 
@@ -295,7 +305,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 22,
     marginRight: 4,
   },
   headerBookmark: {
