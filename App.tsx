@@ -100,6 +100,7 @@ function HomeTabs() {
           headerTitle: () => <HomeHeaderTitle />,
           headerStyle: { backgroundColor: '#C8102E' },
           headerTitleAlign: 'center',
+          headerTitleContainerStyle: { flex: 1 },
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>🏠</Text>

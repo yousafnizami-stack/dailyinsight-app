@@ -4,8 +4,10 @@ import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -90,24 +92,43 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     }
   }, [article, saved]);
 
+  const handleShare = useCallback(async () => {
+    if (!article) return;
+    const categorySlug = article.category?.slug ?? '';
+    const articleUrl = `https://www.dailyinsight.co.uk/${categorySlug}/${article.slug}`;
+    await Share.share(
+      Platform.OS === 'ios'
+        ? { url: articleUrl, title: article.title }
+        : { title: article.title, message: `${article.title} ${articleUrl}` }
+    );
+  }, [article]);
+
   useEffect(() => {
     if (!article) return;
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleSave}
-          style={styles.headerBookmark}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons
-            name={saved ? 'bookmark' : 'bookmark-outline'}
-            size={22}
-            color="#fff"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={handleShare}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="share-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={styles.headerBookmark}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={saved ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color="#000000"
+            />
+          </TouchableOpacity>
+        </View>
       ),
     });
-  }, [article, saved, handleSave, navigation]);
+  }, [article, saved, handleSave, handleShare, navigation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,7 +292,13 @@ const styles = StyleSheet.create({
     height: 1,
     marginBottom: 4,
   },
-  headerBookmark: {
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     marginRight: 4,
+  },
+  headerBookmark: {
+    // no additional style needed
   },
 });

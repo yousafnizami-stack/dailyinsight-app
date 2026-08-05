@@ -1,4 +1,3 @@
-import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -18,12 +17,6 @@ import {
 } from '../lib/api';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
-import {
-  getSavedArticles,
-  removeArticle,
-  saveArticle,
-  SavedArticle,
-} from '../lib/savedArticles';
 
 interface Props {
   navigation: any;
@@ -76,7 +69,6 @@ export default function HomeScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [selectedChip, setSelectedChip] = useState<string>('latest');
 
   // Ref for the main vertical ScrollView
@@ -87,41 +79,6 @@ export default function HomeScreen({ navigation }: Props) {
   const handleSectionLayout = useCallback((key: string, y: number) => {
     sectionYPositions.current[key] = y;
   }, []);
-
-  // Reload saved IDs whenever the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      getSavedArticles().then((saved) => {
-        setSavedIds(new Set(saved.map((a) => a.id)));
-      });
-    }, [])
-  );
-
-  const handleSave = useCallback(
-    async (article: Article) => {
-      const id = article.id;
-      if (savedIds.has(id)) {
-        setSavedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
-        await removeArticle(id);
-      } else {
-        setSavedIds((prev) => new Set(prev).add(id));
-        const toSave: SavedArticle = {
-          id: article.id,
-          title: article.title,
-          slug: article.slug,
-          publishedAt: article.publishedAt,
-          featuredImageUrl: article.featuredImageUrl,
-          category: article.category,
-        };
-        await saveArticle(toSave);
-      }
-    },
-    [savedIds]
-  );
 
   const loadAllSections = useCallback(async () => {
     setError(null);
@@ -249,9 +206,6 @@ export default function HomeScreen({ navigation }: Props) {
                     key={article.id}
                     article={article}
                     onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
-                    showSaveButton
-                    saved={savedIds.has(article.id)}
-                    onSave={() => handleSave(article)}
                   />
                 );
               }
@@ -260,9 +214,6 @@ export default function HomeScreen({ navigation }: Props) {
                   key={article.id}
                   article={article}
                   onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
-                  showSaveButton
-                  saved={savedIds.has(article.id)}
-                  onSave={() => handleSave(article)}
                 />
               );
             })}

@@ -1,7 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Article } from '../lib/api';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
@@ -18,9 +17,6 @@ interface Props {
 export default function HorizontalCard({
   article,
   onPress,
-  showSaveButton = false,
-  saved = false,
-  onSave,
 }: Props) {
   const { colors } = useTheme();
 
@@ -41,26 +37,6 @@ export default function HorizontalCard({
           />
         ) : (
           <View style={[styles.image, { backgroundColor: colors.accent }]} />
-        )}
-
-        {showSaveButton && (
-          <TouchableOpacity
-            style={styles.bookmarkButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              onSave?.();
-            }}
-            activeOpacity={0.8}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <View style={styles.bookmarkCircle}>
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={14}
-                color="#fff"
-              />
-            </View>
-          </TouchableOpacity>
         )}
       </View>
 
@@ -111,19 +87,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-  },
-  bookmarkButton: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-  },
-  bookmarkCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   body: {
     flex: 1,
