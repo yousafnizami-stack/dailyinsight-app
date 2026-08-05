@@ -23,8 +23,8 @@ export interface ArticlesResponse {
 
 // Curated category order mirroring the website's getNavCategories.ts logic.
 // Excludes 'film', 'other', and 'lifestyle'; renames 'tv' to 'TV & Film'.
-const NAV_CATEGORY_ORDER = ['royals', 'celebrity', 'tv', 'music', 'entertainment', 'horoscopes'];
-const NAV_EXCLUDED_SLUGS = new Set(['film', 'other', 'lifestyle']);
+const NAV_CATEGORY_ORDER = ['royals', 'celebrity', 'tv', 'music', 'entertainment'];
+const NAV_EXCLUDED_SLUGS = new Set(['film', 'other', 'lifestyle', 'horoscopes']);
 
 export async function fetchArticles(
   page: number = 1,

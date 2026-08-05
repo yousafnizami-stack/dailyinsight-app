@@ -120,11 +120,15 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
   if (node.type === 'block') {
     const blockType = node.fields?.blockType ?? node.blockType;
     if (blockType === 'carousel') {
-      // Gracefully skip carousels
+      // Gracefully skip carousels — they render inline elsewhere
       return null;
     }
-    // Skip unknown blocks gracefully
-    return null;
+    // Render a visible placeholder for embed blocks and any other unrecognised block type
+    return (
+      <View key={index} style={styles.embedPlaceholder}>
+        <Text style={styles.embedPlaceholderText}>📹 Video content — view on website</Text>
+      </View>
+    );
   }
 
   if (node.type === 'list') {
@@ -232,5 +236,19 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: '#1a1a1a',
     marginBottom: 4,
+  },
+  embedPlaceholder: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  embedPlaceholderText: {
+    fontSize: 14,
+    color: '#666',
   },
 });
