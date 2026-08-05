@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Image, Linking, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 // Payload lexical format bitflags
@@ -79,6 +79,8 @@ function extractInstagramShortcode(url: string): string | null {
 
 function YouTubeEmbed({ videoId }: { videoId: string }) {
   const [loading, setLoading] = useState(true);
+  const webViewRef = useRef<WebView>(null);
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -105,22 +107,38 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
 </head>
 <body>
   <iframe
-    src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=en&origin=https://www.dailyinsight.co.uk"
+    id="yt"
+    src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=en&enablejsapi=1&origin=https://www.dailyinsight.co.uk"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
   ></iframe>
+  <script>
+    document.addEventListener('fullscreenchange', function() {
+      if (!document.fullscreenElement) {
+        var iframe = document.getElementById('yt');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        }
+      }
+    });
+  </script>
 </body>
 </html>`;
+
   return (
     <View style={styles.youtubeContainer}>
       <WebView
+        ref={webViewRef}
         source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
         style={styles.webview}
-        allowsFullscreenVideo={false}
+        allowsFullscreenVideo={true}
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
         javaScriptEnabled={true}
-        cacheEnabled={true}
+        cacheEnabled={false}
+        incognito={true}
+        sharedCookiesEnabled={false}
+        thirdPartyCookiesEnabled={false}
         androidLayerType="hardware"
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
@@ -138,12 +156,13 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
           if (url.includes('google.com')) {
             return true;
           }
-          // Block navigation to any full YouTube page (watch, shorts, home, mobile site)
+          // Non-embed YouTube/youtu.be URLs — hand off to native app or browser
           if (
             url.includes('youtube.com') ||
             url.includes('youtu.be') ||
             url.includes('m.youtube.com')
           ) {
+            Linking.openURL(url);
             return false;
           }
           // Allow everything else (e.g. data: URIs, googlevideo.com for streaming)
