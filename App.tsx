@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Text } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
+import SearchScreen from './screens/SearchScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 
 export type RootStackParamList = {
@@ -14,6 +15,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
+  Search: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,7 +44,17 @@ function HomeTabs() {
           ),
         }}
       />
-      {/* Add more Tab.Screen entries here for future tabs */}
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          title: 'Search',
+          tabBarLabel: 'Search',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Text style={{ fontSize: size, color }}>🔍</Text>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }

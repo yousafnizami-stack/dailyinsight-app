@@ -41,6 +41,37 @@ export async function fetchArticles(
   return { docs: data.docs, totalPages: data.totalPages };
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch(`${BASE_URL}/categories`);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+  const data = await res.json();
+  return (data.docs ?? []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug }));
+}
+
+export async function searchArticles(
+  query: string,
+  page: number = 1
+): Promise<{ docs: Article[]; totalPages: number }> {
+  const url =
+    `${BASE_URL}/articles?where[title][contains]=${encodeURIComponent(query)}&where[status][equals]=published&sort=-publishedAt&limit=20&depth=1&page=${page}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+
+  const data: ArticlesResponse = await res.json();
+  return { docs: data.docs, totalPages: data.totalPages };
+}
+
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
   const url = `${BASE_URL}/articles?where[slug][equals]=${encodeURIComponent(slug)}&depth=1&limit=1`;
 

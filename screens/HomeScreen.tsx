@@ -1,59 +1,19 @@
-import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Article, fetchArticles } from '../lib/api';
-import { timeAgo } from '../lib/timeAgo';
+import ArticleCard from '../components/ArticleCard';
+import { Article, Category, fetchArticles, fetchCategories } from '../lib/api';
 
 interface Props {
   navigation: any;
-}
-
-function CategoryBadge({ name }: { name: string }) {
-  return (
-    <View style={styles.badge}>
-      <Text style={styles.badgeText}>{name.toUpperCase()}</Text>
-    </View>
-  );
-}
-
-function ArticleCard({
-  article,
-  onPress,
-}: {
-  article: Article;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable style={styles.card} onPress={onPress} android_ripple={{ color: '#f0f0f0' }}>
-      {article.featuredImageUrl ? (
-        <Image
-          source={{ uri: article.featuredImageUrl }}
-          style={styles.cardImage}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
-      )}
-      <View style={styles.cardBody}>
-        {article.category?.name ? (
-          <CategoryBadge name={article.category.name} />
-        ) : null}
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {article.title}
-        </Text>
-        <Text style={styles.cardTime}>{timeAgo(article.publishedAt)}</Text>
-      </View>
-    </Pressable>
-  );
 }
 
 function FooterLoader({ loading }: { loading: boolean }) {
@@ -73,99 +33,177 @@ export default function HomeScreen({ navigation }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedSlug, setSelectedSlug] = useState<string | undefined>(undefined);
+
   const onEndReachedCalledDuringMomentum = useRef(false);
 
-  const load = useCallback(async (pageNum: number, replace: boolean) => {
-    try {
-      const { docs, totalPages: tp } = await fetchArticles(pageNum);
-      setArticles((prev) => (replace ? docs : [...prev, ...docs]));
-      setTotalPages(tp);
-      setPage(pageNum);
-      setError(null);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load articles');
-    }
+  const load = useCallback(
+    async (pageNum: number, replace: boolean, categorySlug?: string) => {
+      try {
+        const { docs, totalPages: tp } = await fetchArticles(pageNum, categorySlug);
+        setArticles((prev) => (replace ? docs : [...prev, ...docs]));
+        setTotalPages(tp);
+        setPage(pageNum);
+        setError(null);
+      } catch (e: any) {
+        setError(e.message ?? 'Failed to load articles');
+      }
+    },
+    []
+  );
+
+  // Load categories once on mount
+  useEffect(() => {
+    fetchCategories()
+      .then(setCategories)
+      .catch(() => {}); // silently ignore category errors
   }, []);
 
+  // Load articles when selectedSlug changes
   useEffect(() => {
     setLoading(true);
-    load(1, true).finally(() => setLoading(false));
-  }, [load]);
+    load(1, true, selectedSlug).finally(() => setLoading(false));
+  }, [load, selectedSlug]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load(1, true);
+    await load(1, true, selectedSlug);
     setRefreshing(false);
-  }, [load]);
+  }, [load, selectedSlug]);
 
   const handleEndReached = useCallback(async () => {
     if (onEndReachedCalledDuringMomentum.current) return;
     if (loadingMore || page >= totalPages) return;
     onEndReachedCalledDuringMomentum.current = true;
     setLoadingMore(true);
-    await load(page + 1, false);
+    await load(page + 1, false, selectedSlug);
     setLoadingMore(false);
-  }, [load, loadingMore, page, totalPages]);
+  }, [load, loadingMore, page, totalPages, selectedSlug]);
+
+  const handleChipPress = useCallback((slug: string | undefined) => {
+    setSelectedSlug(slug);
+    // The useEffect on selectedSlug will trigger a fresh load
+  }, []);
+
+  const CategoryChips = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.chipsScroll}
+      contentContainerStyle={styles.chipsContent}
+    >
+      {/* "All" chip */}
+      <Pressable
+        style={[
+          styles.chip,
+          selectedSlug === undefined ? styles.chipSelected : styles.chipUnselected,
+        ]}
+        onPress={() => handleChipPress(undefined)}
+      >
+        <Text
+          style={[
+            styles.chipText,
+            selectedSlug === undefined ? styles.chipTextSelected : styles.chipTextUnselected,
+          ]}
+        >
+          All
+        </Text>
+      </Pressable>
+
+      {categories.map((cat) => {
+        const isSelected = selectedSlug === cat.slug;
+        return (
+          <Pressable
+            key={cat.id}
+            style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
+            onPress={() => handleChipPress(cat.slug)}
+          >
+            <Text
+              style={[
+                styles.chipText,
+                isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
+              ]}
+            >
+              {cat.name.trim()}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#C8102E" />
+      <View style={styles.flex}>
+        {CategoryChips}
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#C8102E" />
+        </View>
       </View>
     );
   }
 
   if (error && articles.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Pressable
-          style={styles.retryButton}
-          onPress={() => {
-            setLoading(true);
-            load(1, true).finally(() => setLoading(false));
-          }}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </Pressable>
+      <View style={styles.flex}>
+        {CategoryChips}
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              load(1, true, selectedSlug).finally(() => setLoading(false));
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
-    <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContent}
-      data={articles}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <ArticleCard
-          article={item}
-          onPress={() =>
-            navigation.navigate('ArticleDetail', { slug: item.slug })
-          }
-        />
-      )}
-      onEndReached={handleEndReached}
-      onEndReachedThreshold={0.2}
-      onMomentumScrollBegin={() => {
-        onEndReachedCalledDuringMomentum.current = false;
-      }}
-      ListFooterComponent={<FooterLoader loading={loadingMore} />}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor="#C8102E"
-          colors={['#C8102E']}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-    />
+    <View style={styles.flex}>
+      {CategoryChips}
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        data={articles}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ArticleCard
+            article={item}
+            onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+          />
+        )}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.2}
+        onMomentumScrollBegin={() => {
+          onEndReachedCalledDuringMomentum.current = false;
+        }}
+        ListFooterComponent={<FooterLoader loading={loadingMore} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#C8102E"
+            colors={['#C8102E']}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   list: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -177,7 +215,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
     padding: 24,
   },
   errorText: {
@@ -197,56 +235,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginVertical: 6,
-    borderRadius: 10,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardImage: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-  },
-  cardImagePlaceholder: {
-    backgroundColor: '#C8102E',
-  },
-  cardBody: {
-    padding: 12,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: '#C8102E',
-    borderRadius: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginBottom: 7,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#C8102E',
-    letterSpacing: 0.5,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-    lineHeight: 22,
-    marginBottom: 6,
-  },
-  cardTime: {
-    fontSize: 12,
-    color: '#888',
-  },
   footerLoader: {
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  // Category chips
+  chipsScroll: {
+    flexGrow: 0,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  chipsContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  chipSelected: {
+    backgroundColor: '#C8102E',
+  },
+  chipUnselected: {
+    backgroundColor: '#ebebeb',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  chipTextSelected: {
+    color: '#fff',
+  },
+  chipTextUnselected: {
+    color: '#444',
   },
 });
