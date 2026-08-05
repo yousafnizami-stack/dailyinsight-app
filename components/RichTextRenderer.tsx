@@ -1,5 +1,6 @@
-import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 // Payload lexical format bitflags
 const FORMAT_BOLD = 1;
@@ -59,6 +60,116 @@ function renderInlineChildren(children: LexicalNode[] = []) {
     }
     return null;
   });
+}
+
+/** Extract YouTube video ID from a youtube.com or youtu.be URL */
+function extractYouTubeId(url: string): string | null {
+  const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  return null;
+}
+
+/** Extract Instagram post shortcode from an instagram.com/p/... URL */
+function extractInstagramShortcode(url: string): string | null {
+  const match = url.match(/instagram\.com\/p\/([^/?#]+)/);
+  return match ? match[1] : null;
+}
+
+function YouTubeEmbed({ videoId }: { videoId: string }) {
+  const [loading, setLoading] = useState(true);
+  return (
+    <View style={styles.youtubeContainer}>
+      <WebView
+        source={{ uri: `https://www.youtube.com/embed/${videoId}?playsinline=1` }}
+        style={styles.webview}
+        allowsFullscreenVideo
+        mediaPlaybackRequiresUserAction={false}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+      />
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C8102E" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function InstagramEmbed({ shortcode }: { shortcode: string }) {
+  const [loading, setLoading] = useState(true);
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff; display: flex; justify-content: center; }
+    .instagram-media { min-width: 100% !important; max-width: 100% !important; }
+  </style>
+</head>
+<body>
+  <blockquote
+    class="instagram-media"
+    data-instgrm-permalink="https://www.instagram.com/p/${shortcode}/"
+    data-instgrm-version="14"
+  ></blockquote>
+  <script async src="https://www.instagram.com/embed.js"></script>
+</body>
+</html>`;
+  return (
+    <View style={styles.instagramContainer}>
+      <WebView
+        source={{ html }}
+        style={styles.webview}
+        scrollEnabled={false}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+      />
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C8102E" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function EmbedBlock({ fields }: { fields: any }) {
+  const url: string = fields?.url ?? '';
+
+  if (!url) {
+    return (
+      <View style={styles.embedPlaceholder}>
+        <Text style={styles.embedPlaceholderText}>📹 Video content — view on website</Text>
+      </View>
+    );
+  }
+
+  // YouTube
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const videoId = extractYouTubeId(url);
+    if (videoId) {
+      return <YouTubeEmbed videoId={videoId} />;
+    }
+  }
+
+  // Instagram
+  if (url.includes('instagram.com')) {
+    const shortcode = extractInstagramShortcode(url);
+    if (shortcode) {
+      return <InstagramEmbed shortcode={shortcode} />;
+    }
+  }
+
+  // Unrecognised platform — show fallback
+  return (
+    <View style={styles.embedPlaceholder}>
+      <Text style={styles.embedPlaceholderText}>📹 Video content — view on website</Text>
+    </View>
+  );
 }
 
 function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
@@ -123,12 +234,11 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
       // Gracefully skip carousels — they render inline elsewhere
       return null;
     }
-    // Render a visible placeholder for embed blocks and any other unrecognised block type
-    return (
-      <View key={index} style={styles.embedPlaceholder}>
-        <Text style={styles.embedPlaceholderText}>📹 Video content — view on website</Text>
-      </View>
-    );
+    if (blockType === 'embedBlock') {
+      return <EmbedBlock key={index} fields={node.fields} />;
+    }
+    // Unknown block type — skip gracefully
+    return null;
   }
 
   if (node.type === 'list') {
@@ -250,5 +360,31 @@ const styles = StyleSheet.create({
   embedPlaceholderText: {
     fontSize: 14,
     color: '#666',
+  },
+  youtubeContainer: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    marginVertical: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  instagramContainer: {
+    width: '100%',
+    height: 600,
+    marginVertical: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
 });
