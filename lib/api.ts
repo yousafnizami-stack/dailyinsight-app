@@ -21,18 +21,28 @@ export interface ArticlesResponse {
   page: number;
 }
 
+// Curated category order mirroring the website's getNavCategories.ts logic.
+// Excludes 'film', 'other', and 'lifestyle'; renames 'tv' to 'TV & Film'.
+const NAV_CATEGORY_ORDER = ['royals', 'celebrity', 'tv', 'music', 'entertainment', 'horoscopes'];
+const NAV_EXCLUDED_SLUGS = new Set(['film', 'other', 'lifestyle']);
+
 export async function fetchArticles(
   page: number = 1,
   categorySlug?: string
 ): Promise<{ docs: Article[]; totalPages: number }> {
-  let url =
-    `${BASE_URL}/articles?where[status][equals]=published&sort=-publishedAt&limit=20&depth=1&page=${page}`;
+  const params = new URLSearchParams({
+    'where[status][equals]': 'published',
+    sort: '-publishedAt',
+    limit: '20',
+    depth: '1',
+    page: String(page),
+  });
 
   if (categorySlug) {
-    url += `&where[category.slug][equals]=${encodeURIComponent(categorySlug)}`;
+    params.set('where[category.slug][equals]', categorySlug);
   }
 
-  const res = await fetch(url);
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
@@ -48,22 +58,50 @@ export interface Category {
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${BASE_URL}/categories`);
+  const res = await fetch(`${BASE_URL}/categories?limit=20&depth=0`);
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
   const data = await res.json();
-  return (data.docs ?? []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug }));
+
+  const allCats: Category[] = (data.docs ?? [])
+    .filter((c: any) => !NAV_EXCLUDED_SLUGS.has(c.slug))
+    .map((c: any) => ({
+      id: c.id,
+      name: c.slug === 'tv' ? 'TV & Film' : c.name.trim(),
+      slug: c.slug,
+    }));
+
+  // Sort by curated order; any unknown slugs go to the end
+  const ordered = [
+    ...NAV_CATEGORY_ORDER
+      .map(slug => allCats.find(c => c.slug === slug))
+      .filter((c): c is Category => c !== undefined),
+    ...allCats.filter(c => !NAV_CATEGORY_ORDER.includes(c.slug)),
+  ];
+
+  return ordered;
 }
 
 export async function searchArticles(
   query: string,
   page: number = 1
 ): Promise<{ docs: Article[]; totalPages: number }> {
-  const url =
-    `${BASE_URL}/articles?where[title][contains]=${encodeURIComponent(query)}&where[status][equals]=published&sort=-publishedAt&limit=20&depth=1&page=${page}`;
+  // Lowercase the query for consistent case-insensitive matching, and use
+  // URLSearchParams so every value (including multi-word terms with spaces)
+  // is correctly percent-encoded before being appended to the URL.
+  const normalised = query.trim().toLowerCase();
 
-  const res = await fetch(url);
+  const params = new URLSearchParams({
+    'where[title][contains]': normalised,
+    'where[status][equals]': 'published',
+    sort: '-publishedAt',
+    limit: '20',
+    depth: '1',
+    page: String(page),
+  });
+
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
@@ -73,9 +111,13 @@ export async function searchArticles(
 }
 
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
-  const url = `${BASE_URL}/articles?where[slug][equals]=${encodeURIComponent(slug)}&depth=1&limit=1`;
+  const params = new URLSearchParams({
+    'where[slug][equals]': slug,
+    depth: '1',
+    limit: '1',
+  });
 
-  const res = await fetch(url);
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
