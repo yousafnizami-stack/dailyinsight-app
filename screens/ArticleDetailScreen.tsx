@@ -122,7 +122,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
             <Ionicons
               name={saved ? 'bookmark' : 'bookmark-outline'}
               size={22}
-              color="#fff"
+              color="#000000"
             />
           </Pressable>
         </View>
