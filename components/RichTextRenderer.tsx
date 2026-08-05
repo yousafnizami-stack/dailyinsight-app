@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Linking, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Linking, StyleSheet, Text, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 // Payload lexical format bitflags
 const FORMAT_BOLD = 1;
@@ -422,12 +424,16 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
     if (!media) return null;
     const imageUrl = media.cloudinaryUrl ?? media.url;
     if (!imageUrl) return null;
+    const naturalWidth: number | undefined = media.width;
+    const naturalHeight: number | undefined = media.height;
+    const aspectRatio =
+      naturalWidth && naturalHeight ? naturalWidth / naturalHeight : 16 / 9;
     return (
       <Image
         key={index}
         source={{ uri: imageUrl }}
-        style={styles.uploadImage}
-        resizeMode="cover"
+        style={[styles.uploadImage, { aspectRatio }]}
+        resizeMode="contain"
       />
     );
   }
@@ -538,7 +544,6 @@ const styles = StyleSheet.create({
   },
   uploadImage: {
     width: '100%',
-    aspectRatio: 16 / 9,
     borderRadius: 6,
     marginVertical: 12,
   },
