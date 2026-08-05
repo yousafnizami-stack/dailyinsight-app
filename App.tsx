@@ -34,26 +34,26 @@ const headerStyles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 7,
   },
   wordmarkRow: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 34,
-    lineHeight: 38,
+    lineHeight: 45,
     letterSpacing: 0.3,
   },
   wordmarkDaily: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 34,
     color: '#FFFFFF',
-    lineHeight: 38,
+    lineHeight: 45,
     letterSpacing: 0.3,
   },
   wordmarkInsight: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 34,
     color: '#D4AF37',
-    lineHeight: 38,
+    lineHeight: 45,
     letterSpacing: 0.3,
   },
 });
