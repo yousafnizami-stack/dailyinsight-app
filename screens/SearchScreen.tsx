@@ -8,8 +8,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import ArticleCard from '../components/ArticleCard';
+import HorizontalCard from '../components/HorizontalCard';
 import { Article, searchArticles } from '../lib/api';
+import { Fonts } from '../lib/fonts';
+import { useTheme } from '../lib/ThemeContext';
 import {
   getSavedArticles,
   removeArticle,
@@ -22,6 +24,8 @@ interface Props {
 }
 
 export default function SearchScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+
   const [query, setQuery] = useState('');
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +34,6 @@ export default function SearchScreen({ navigation }: Props) {
 
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
-  // Reload saved IDs whenever the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       getSavedArticles().then((saved) => {
@@ -99,24 +102,35 @@ export default function SearchScreen({ navigation }: Props) {
     if (!searched) {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Search for articles</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted, fontFamily: Fonts.sourceSerif }]}>
+            Search for articles
+          </Text>
         </View>
       );
     }
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyText}>No articles found for "{query}"</Text>
+        <Text style={[styles.emptyText, { color: colors.textMuted, fontFamily: Fonts.sourceSerif }]}>
+          No articles found for "{query}"
+        </Text>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchBarWrapper}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.searchBarWrapper, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TextInput
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.surface,
+              color: colors.text,
+              fontFamily: Fonts.sourceSerif,
+            },
+          ]}
           placeholder="Search articles..."
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
           autoCapitalize="none"
@@ -128,14 +142,14 @@ export default function SearchScreen({ navigation }: Props) {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#C8102E" />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlatList
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <ArticleCard
+            <HorizontalCard
               article={item}
               onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
               showSaveButton
@@ -158,22 +172,17 @@ export default function SearchScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   searchBarWrapper: {
-    backgroundColor: '#fff',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   searchInput: {
-    backgroundColor: '#f0f0f0',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 9,
     fontSize: 15,
-    color: '#111',
   },
   centered: {
     flex: 1,
@@ -194,7 +203,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    color: '#888',
     textAlign: 'center',
   },
 });

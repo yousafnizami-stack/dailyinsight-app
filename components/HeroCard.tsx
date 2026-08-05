@@ -10,15 +10,12 @@ import { timeAgo } from '../lib/timeAgo';
 interface Props {
   article: Article;
   onPress: () => void;
-  /** Show the bookmark toggle button over the image */
   showSaveButton?: boolean;
-  /** Whether the article is currently saved */
   saved?: boolean;
-  /** Called when the bookmark button is tapped */
   onSave?: () => void;
 }
 
-export default function ArticleCard({
+export default function HeroCard({
   article,
   onPress,
   showSaveButton = false,
@@ -37,12 +34,12 @@ export default function ArticleCard({
         {article.featuredImageUrl ? (
           <Image
             source={{ uri: article.featuredImageUrl }}
-            style={styles.cardImage}
+            style={styles.image}
             contentFit="cover"
             transition={200}
           />
         ) : (
-          <View style={[styles.cardImage, { backgroundColor: colors.accent }]} />
+          <View style={[styles.image, { backgroundColor: colors.accent }]} />
         )}
 
         {showSaveButton && (
@@ -66,19 +63,19 @@ export default function ArticleCard({
         )}
       </View>
 
-      <View style={styles.cardBody}>
+      <View style={[styles.body, { borderTopWidth: 3, borderTopColor: colors.accent }]}>
         {article.category?.name ? (
-          <Text style={[styles.badgeText, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}>
+          <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
             {article.category.name.toUpperCase()}
           </Text>
         ) : null}
         <Text
-          style={[styles.cardTitle, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
-          numberOfLines={2}
+          style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}
+          numberOfLines={3}
         >
           {article.title}
         </Text>
-        <Text style={[styles.cardTime, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+        <Text style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
           {timeAgo(article.publishedAt)}
         </Text>
       </View>
@@ -90,7 +87,7 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 12,
     marginVertical: 6,
-    borderRadius: 6,
+    borderRadius: 4,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -101,7 +98,7 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: 'relative',
   },
-  cardImage: {
+  image: {
     width: '100%',
     aspectRatio: 16 / 9,
   },
@@ -118,21 +115,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardBody: {
+  body: {
     padding: 12,
+    paddingTop: 10,
   },
-  badgeText: {
+  eyebrow: {
     fontSize: 10,
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 5,
   },
-  cardTitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 6,
+  headline: {
+    fontSize: 22,
+    lineHeight: 28,
+    marginBottom: 7,
   },
-  cardTime: {
-    fontSize: 12,
-    letterSpacing: 0.2,
+  timestamp: {
+    fontSize: 11,
+    letterSpacing: 0.3,
   },
 });

@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Linking, StyleSheet, Text, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { Fonts } from '../lib/fonts';
+import { useTheme } from '../lib/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -24,7 +26,7 @@ interface Props {
   body: any;
 }
 
-function renderTextNode(node: LexicalNode, index: number) {
+function renderTextNode(node: LexicalNode, index: number, textColor: string) {
   const text = node.text ?? '';
   const format = node.format ?? 0;
 
@@ -36,6 +38,7 @@ function renderTextNode(node: LexicalNode, index: number) {
     <Text
       key={index}
       style={[
+        { color: textColor },
         isBold && styles.bold,
         isItalic && styles.italic,
         isUnderline && styles.underline,
@@ -46,18 +49,19 @@ function renderTextNode(node: LexicalNode, index: number) {
   );
 }
 
-function renderInlineChildren(children: LexicalNode[] = []) {
+function renderInlineChildren(children: LexicalNode[] = [], textColor: string): React.ReactNode[] {
   return children.map((child, i) => {
     if (child.type === 'text' || child.text !== undefined) {
-      return renderTextNode(child, i);
+      return renderTextNode(child, i, textColor);
     }
     if (child.type === 'linebreak') {
       return <Text key={i}>{'\n'}</Text>;
     }
-    // Recurse for link nodes etc.
     if (child.children) {
       return (
-        <Text key={i}>{renderInlineChildren(child.children)}</Text>
+        <Text key={i} style={{ color: textColor }}>
+          {renderInlineChildren(child.children, textColor)}
+        </Text>
       );
     }
     return null;
@@ -115,9 +119,6 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
     allowfullscreen
   ></iframe>
   <script>
-    // ── DIAGNOSTIC BRIDGE ──────────────────────────────────────────────────────
-    // All log() calls here are forwarded to React Native via postMessage so we
-    // can observe real on-device behaviour without a debugger attached.
     function rnLog(tag, payload) {
       try {
         var msg = JSON.stringify({ tag: tag, payload: payload, ts: Date.now() });
@@ -129,26 +130,14 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
 
     rnLog('DIAG_INIT', 'injected script running');
 
-    // ── DIAGNOSTIC 1: YouTube iframe API caption state ─────────────────────────
-    // The YouTube Player API sends postMessage events from the iframe.
-    // We listen for them here and forward the raw data to React Native.
-    // The onApiChange event fires when a module (e.g. captions) becomes available.
-    // We then use the getOption postMessage command to query the active caption track.
     window.addEventListener('message', function(evt) {
-      // Only care about messages coming from the YouTube iframe.
       if (!evt.origin || evt.origin.indexOf('youtube.com') === -1) return;
-
       var raw = evt.data;
       var parsed = null;
       try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) {}
-
       rnLog('YT_MESSAGE', { origin: evt.origin, raw: raw });
-
       if (!parsed) return;
-
-      // When the player is ready, query the initial caption state.
-      if (parsed.event === 'onReady' || parsed.info === 0 /* UNSTARTED => player ready */) {
-        rnLog('YT_PLAYER_READY', 'querying caption track via getOption');
+      if (parsed.event === 'onReady' || parsed.info === 0) {
         var iframe = document.getElementById('yt');
         if (iframe && iframe.contentWindow) {
           iframe.contentWindow.postMessage(
@@ -157,10 +146,7 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
           );
         }
       }
-
-      // When a module becomes available (onApiChange), query caption state.
       if (parsed.event === 'onApiChange') {
-        rnLog('YT_API_CHANGE', { info: parsed.info });
         var iframe2 = document.getElementById('yt');
         if (iframe2 && iframe2.contentWindow) {
           iframe2.contentWindow.postMessage(
@@ -169,51 +155,16 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
           );
         }
       }
-
-      // Surface any caption-related data in player state.
-      if (parsed.event === 'infoDelivery' && parsed.info) {
-        var info = parsed.info;
-        if (info.playerState !== undefined || info.currentTime !== undefined) {
-          // Not a caption event; ignore to reduce noise.
-        } else {
-          // Likely a getOption response (caption track data).
-          rnLog('YT_OPTION_RESPONSE', { info: info });
-        }
-      }
-    });
-
-    // ── DIAGNOSTIC 2: Fullscreen event coverage (all vendor prefixes) ──────────
-    // iOS WebKit does NOT fire the standard 'fullscreenchange' event.
-    // We register all known prefixed variants to surface which (if any) fire.
-
-    rnLog('FULLSCREEN_API', {
-      fullscreenEnabled: document.fullscreenEnabled,
-      webkitFullscreenEnabled: document.webkitFullscreenEnabled,
-      mozFullScreenEnabled: document.mozFullScreenEnabled,
-      msFullscreenEnabled: document.msFullscreenEnabled,
     });
 
     function handleFullscreenChange(evtName) {
       return function() {
-        var state = {
-          event: evtName,
-          fullscreenElement: document.fullscreenElement ? 'SET' : null,
-          webkitFullscreenElement: document.webkitFullscreenElement ? 'SET' : null,
-          webkitCurrentFullScreenElement: document.webkitCurrentFullScreenElement ? 'SET' : null,
-          mozFullScreenElement: document.mozFullScreenElement ? 'SET' : null,
-          msFullscreenElement: document.msFullscreenElement ? 'SET' : null,
-        };
-        rnLog('FULLSCREEN_CHANGE', state);
-
-        // Resume inline playback when exiting fullscreen (all variants).
         var isExiting = !document.fullscreenElement
           && !document.webkitFullscreenElement
           && !document.webkitCurrentFullScreenElement
           && !document.mozFullScreenElement
           && !document.msFullscreenElement;
-
         if (isExiting) {
-          rnLog('FULLSCREEN_EXIT', 'sending playVideo command');
           var iframe = document.getElementById('yt');
           if (iframe && iframe.contentWindow) {
             iframe.contentWindow.postMessage(
@@ -225,14 +176,10 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
       };
     }
 
-    rnLog('FULLSCREEN_LISTENERS', 'registering all vendor-prefixed fullscreenchange listeners');
     document.addEventListener('fullscreenchange',       handleFullscreenChange('fullscreenchange'));
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange('webkitfullscreenchange'));
     document.addEventListener('mozfullscreenchange',    handleFullscreenChange('mozfullscreenchange'));
     document.addEventListener('msfullscreenchange',     handleFullscreenChange('msfullscreenchange'));
-
-    rnLog('DIAG_SETUP_COMPLETE', 'all listeners registered');
-    // ── END DIAGNOSTICS ────────────────────────────────────────────────────────
   </script>
 </body>
 </html>`;
@@ -270,19 +217,15 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
         onLoadEnd={() => setLoading(false)}
         onShouldStartLoadWithRequest={(request) => {
           const url = request.url;
-          // Allow the initial blank load and the injected HTML base
           if (url === 'about:blank' || url.startsWith('https://www.dailyinsight.co.uk')) {
             return true;
           }
-          // Allow YouTube embed URLs
           if (url.includes('youtube.com/embed')) {
             return true;
           }
-          // Allow Google domains needed for YouTube auth/tracking
           if (url.includes('google.com')) {
             return true;
           }
-          // Non-embed YouTube/youtu.be URLs — hand off to native app or browser
           if (
             url.includes('youtube.com') ||
             url.includes('youtu.be') ||
@@ -291,7 +234,6 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
             Linking.openURL(url);
             return false;
           }
-          // Allow everything else (e.g. data: URIs, googlevideo.com for streaming)
           return true;
         }}
       />
@@ -354,7 +296,6 @@ function EmbedBlock({ fields }: { fields: any }) {
     );
   }
 
-  // YouTube
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     const videoId = extractYouTubeId(url);
     if (videoId) {
@@ -362,7 +303,6 @@ function EmbedBlock({ fields }: { fields: any }) {
     }
   }
 
-  // Instagram
   if (url.includes('instagram.com')) {
     const shortcode = extractInstagramShortcode(url);
     if (shortcode) {
@@ -370,7 +310,6 @@ function EmbedBlock({ fields }: { fields: any }) {
     }
   }
 
-  // Unrecognised platform — show fallback
   return (
     <View style={styles.embedPlaceholder}>
       <Text style={styles.embedPlaceholderText}>📹 Video content — view on website</Text>
@@ -378,18 +317,35 @@ function EmbedBlock({ fields }: { fields: any }) {
   );
 }
 
-function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
+function BlockNode({
+  node,
+  index,
+  colors,
+}: {
+  node: LexicalNode;
+  index: number;
+  colors: {
+    text: string;
+    textSecondary: string;
+    textMuted: string;
+    border: string;
+    accent: string;
+    surface: string;
+  };
+}) {
   if (node.type === 'paragraph') {
     const textContent = (node.children ?? [])
       .map((c) => c.text ?? '')
       .join('');
-    // Skip completely empty paragraphs
     if (!textContent.trim()) {
       return <View key={index} style={styles.paragraphSpacer} />;
     }
     return (
-      <Text key={index} style={styles.paragraph}>
-        {renderInlineChildren(node.children)}
+      <Text
+        key={index}
+        style={[styles.paragraph, { color: colors.text, fontFamily: Fonts.sourceSerif }]}
+      >
+        {renderInlineChildren(node.children, colors.text)}
       </Text>
     );
   }
@@ -403,17 +359,31 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
         ? styles.h2
         : styles.h3;
     return (
-      <Text key={index} style={[styles.heading, headingStyle]}>
-        {renderInlineChildren(node.children)}
+      <Text
+        key={index}
+        style={[styles.heading, headingStyle, { color: colors.text, fontFamily: Fonts.playfair }]}
+      >
+        {renderInlineChildren(node.children, colors.text)}
       </Text>
     );
   }
 
   if (node.type === 'quote') {
     return (
-      <View key={index} style={styles.blockquoteContainer}>
-        <Text style={styles.blockquoteText}>
-          {renderInlineChildren(node.children)}
+      <View
+        key={index}
+        style={[
+          styles.blockquoteContainer,
+          { borderLeftColor: colors.accent, backgroundColor: colors.surface },
+        ]}
+      >
+        <Text
+          style={[
+            styles.blockquoteText,
+            { color: colors.textSecondary, fontFamily: Fonts.sourceSerif },
+          ]}
+        >
+          {renderInlineChildren(node.children, colors.textSecondary)}
         </Text>
       </View>
     );
@@ -441,13 +411,11 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
   if (node.type === 'block') {
     const blockType = node.fields?.blockType ?? node.blockType;
     if (blockType === 'carousel') {
-      // Gracefully skip carousels — they render inline elsewhere
       return null;
     }
     if (blockType === 'embedBlock') {
       return <EmbedBlock key={index} fields={node.fields} />;
     }
-    // Unknown block type — skip gracefully
     return null;
   }
 
@@ -456,20 +424,24 @@ function BlockNode({ node, index }: { node: LexicalNode; index: number }) {
     return (
       <View key={index} style={styles.list}>
         {(node.children ?? []).map((item, i) => (
-          <Text key={i} style={styles.listItem}>
+          <Text
+            key={i}
+            style={[styles.listItem, { color: colors.text, fontFamily: Fonts.sourceSerif }]}
+          >
             {isOrdered ? `${i + 1}. ` : '• '}
-            {renderInlineChildren(item.children)}
+            {renderInlineChildren(item.children, colors.text)}
           </Text>
         ))}
       </View>
     );
   }
 
-  // Unknown node type — skip gracefully
   return null;
 }
 
 export default function RichTextRenderer({ body }: Props) {
+  const { colors } = useTheme();
+
   if (!body?.root?.children) {
     return null;
   }
@@ -479,7 +451,7 @@ export default function RichTextRenderer({ body }: Props) {
   return (
     <View style={styles.container}>
       {nodes.map((node, i) => (
-        <BlockNode key={i} node={node} index={i} />
+        <BlockNode key={i} node={node} index={i} colors={colors} />
       ))}
     </View>
   );
@@ -488,20 +460,18 @@ export default function RichTextRenderer({ body }: Props) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 32,
   },
   paragraph: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: '#1a1a1a',
+    fontSize: 17,
+    lineHeight: 28,
     marginBottom: 14,
   },
   paragraphSpacer: {
     height: 8,
   },
   heading: {
-    fontWeight: 'bold',
-    color: '#111',
     marginBottom: 10,
     marginTop: 16,
   },
@@ -528,10 +498,8 @@ const styles = StyleSheet.create({
   },
   blockquoteContainer: {
     borderLeftWidth: 4,
-    borderLeftColor: '#C8102E',
     paddingLeft: 12,
     marginVertical: 12,
-    backgroundColor: '#fdf5f6',
     paddingVertical: 8,
     paddingRight: 8,
     borderRadius: 2,
@@ -539,7 +507,6 @@ const styles = StyleSheet.create({
   blockquoteText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#444',
     fontStyle: 'italic',
   },
   uploadImage: {
@@ -551,9 +518,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   listItem: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: '#1a1a1a',
+    fontSize: 17,
+    lineHeight: 28,
     marginBottom: 4,
   },
   embedPlaceholder: {

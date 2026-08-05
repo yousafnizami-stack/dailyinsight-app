@@ -5,6 +5,7 @@ export interface Article {
   title: string;
   slug: string;
   excerpt?: string;
+  author?: string;
   publishedAt: string;
   category?: {
     slug: string;
@@ -108,6 +109,27 @@ export async function searchArticles(
 
   const data: ArticlesResponse = await res.json();
   return { docs: data.docs, totalPages: data.totalPages };
+}
+
+export async function fetchArticlesByCategory(
+  categorySlug: string,
+  limit: number = 6
+): Promise<Article[]> {
+  const params = new URLSearchParams({
+    'where[category.slug][equals]': categorySlug,
+    'where[status][equals]': 'published',
+    sort: '-publishedAt',
+    limit: String(limit),
+    depth: '1',
+  });
+
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+
+  const data: ArticlesResponse = await res.json();
+  return data.docs;
 }
 
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {

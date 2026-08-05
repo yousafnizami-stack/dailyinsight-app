@@ -10,8 +10,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import ArticleCard from '../components/ArticleCard';
-import { Article, Category, fetchArticles, fetchCategories } from '../lib/api';
+import HeroCard from '../components/HeroCard';
+import HorizontalCard from '../components/HorizontalCard';
+import { Article, Category, fetchArticles, fetchArticlesByCategory, fetchCategories } from '../lib/api';
+import { Fonts } from '../lib/fonts';
+import { useTheme } from '../lib/ThemeContext';
 import {
   getSavedArticles,
   removeArticle,
@@ -23,6 +26,15 @@ interface Props {
   navigation: any;
 }
 
+// Categories shown in the "All" mixed section feed, in order
+const SECTION_CATEGORY_SLUGS = ['royals', 'celebrity', 'entertainment', 'music'];
+
+interface Section {
+  categorySlug: string;
+  categoryName: string;
+  articles: Article[];
+}
+
 function FooterLoader({ loading }: { loading: boolean }) {
   if (!loading) return null;
   return (
@@ -32,7 +44,73 @@ function FooterLoader({ loading }: { loading: boolean }) {
   );
 }
 
+function SectionHeader({ title }: { title: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.sectionHeaderWrapper, { borderBottomColor: colors.accent }]}>
+      <Text style={[styles.sectionHeaderText, { color: colors.sectionHeader, fontFamily: Fonts.playfair }]}>
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+function SectionFeed({
+  sections,
+  savedIds,
+  onArticlePress,
+  onSave,
+}: {
+  sections: Section[];
+  savedIds: Set<string>;
+  onArticlePress: (slug: string) => void;
+  onSave: (article: Article) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingVertical: 8 }}
+    >
+      {sections.map((section) => (
+        <View key={section.categorySlug}>
+          <SectionHeader title={section.categoryName} />
+          {section.articles.map((article, idx) => {
+            if (idx === 0) {
+              return (
+                <HeroCard
+                  key={article.id}
+                  article={article}
+                  onPress={() => onArticlePress(article.slug)}
+                  showSaveButton
+                  saved={savedIds.has(article.id)}
+                  onSave={() => onSave(article)}
+                />
+              );
+            }
+            return (
+              <HorizontalCard
+                key={article.id}
+                article={article}
+                onPress={() => onArticlePress(article.slug)}
+                showSaveButton
+                saved={savedIds.has(article.id)}
+                onSave={() => onSave(article)}
+              />
+            );
+          })}
+          <View style={[styles.sectionDivider, { borderBottomColor: colors.border }]} />
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
 export default function HomeScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+
+  // Flat list state for individual category tabs
   const [articles, setArticles] = useState<Article[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -40,6 +118,11 @@ export default function HomeScreen({ navigation }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Section feed state for "All" tab
+  const [sections, setSections] = useState<Section[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [sectionsError, setSectionsError] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string | undefined>(undefined);
@@ -61,7 +144,6 @@ export default function HomeScreen({ navigation }: Props) {
     async (article: Article) => {
       const id = article.id;
       if (savedIds.has(id)) {
-        // Optimistic UI update
         setSavedIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
@@ -84,6 +166,7 @@ export default function HomeScreen({ navigation }: Props) {
     [savedIds]
   );
 
+  // Load flat article list (for individual category tabs)
   const load = useCallback(
     async (pageNum: number, replace: boolean, categorySlug?: string) => {
       try {
@@ -99,26 +182,65 @@ export default function HomeScreen({ navigation }: Props) {
     []
   );
 
+  // Load multi-category sections for "All" tab
+  const loadSections = useCallback(async (cats: Category[]) => {
+    setSectionsLoading(true);
+    setSectionsError(null);
+    try {
+      // Fetch from the curated slugs, filtered to what's available in cats
+      const available = SECTION_CATEGORY_SLUGS.filter(
+        (slug) => cats.find((c) => c.slug === slug)
+      );
+      const results = await Promise.all(
+        available.map(async (slug) => {
+          const cat = cats.find((c) => c.slug === slug)!;
+          const articles = await fetchArticlesByCategory(slug, 6);
+          return { categorySlug: slug, categoryName: cat.name, articles };
+        })
+      );
+      // Only keep sections that have at least one article
+      setSections(results.filter((s) => s.articles.length > 0));
+    } catch (e: any) {
+      setSectionsError(e.message ?? 'Failed to load sections');
+    } finally {
+      setSectionsLoading(false);
+    }
+  }, []);
+
   // Load categories once on mount
   useEffect(() => {
     fetchCategories()
-      .then(setCategories)
-      .catch(() => {}); // silently ignore category errors
-  }, []);
+      .then((cats) => {
+        setCategories(cats);
+        // Trigger section load now that we have category names
+        loadSections(cats);
+      })
+      .catch(() => {
+        // If categories fail, try sections with display names from slug
+        loadSections([]);
+      });
+  }, [loadSections]);
 
-  // Load articles when selectedSlug changes
+  // Load articles when selectedSlug changes (only for non-All tabs)
   useEffect(() => {
+    if (selectedSlug === undefined) return; // "All" tab uses sections
     setLoading(true);
     load(1, true, selectedSlug).finally(() => setLoading(false));
   }, [load, selectedSlug]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load(1, true, selectedSlug);
+    if (selectedSlug === undefined) {
+      // Refresh sections
+      await loadSections(categories);
+    } else {
+      await load(1, true, selectedSlug);
+    }
     setRefreshing(false);
-  }, [load, selectedSlug]);
+  }, [load, loadSections, selectedSlug, categories]);
 
   const handleEndReached = useCallback(async () => {
+    if (selectedSlug === undefined) return; // sections don't paginate
     if (onEndReachedCalledDuringMomentum.current) return;
     if (loadingMore || page >= totalPages) return;
     onEndReachedCalledDuringMomentum.current = true;
@@ -129,32 +251,35 @@ export default function HomeScreen({ navigation }: Props) {
 
   const handleChipPress = useCallback((slug: string | undefined) => {
     setSelectedSlug(slug);
-    // The useEffect on selectedSlug will trigger a fresh load
   }, []);
 
-  const CategoryChips = (
+  // Underline tab navigation (Part C)
+  const CategoryTabs = (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.chipsScroll}
-      contentContainerStyle={styles.chipsContent}
+      style={[styles.tabsScroll, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
+      contentContainerStyle={styles.tabsContent}
     >
-      {/* "All" chip */}
+      {/* "All" tab */}
       <Pressable
-        style={[
-          styles.chip,
-          selectedSlug === undefined ? styles.chipSelected : styles.chipUnselected,
-        ]}
+        style={styles.tab}
         onPress={() => handleChipPress(undefined)}
       >
         <Text
           style={[
-            styles.chipText,
-            selectedSlug === undefined ? styles.chipTextSelected : styles.chipTextUnselected,
+            styles.tabText,
+            { fontFamily: Fonts.barlow },
+            selectedSlug === undefined
+              ? { color: colors.accent }
+              : { color: colors.textMuted },
           ]}
         >
-          All
+          ALL
         </Text>
+        {selectedSlug === undefined && (
+          <View style={[styles.tabUnderline, { backgroundColor: colors.accent }]} />
+        )}
       </Pressable>
 
       {categories.map((cat) => {
@@ -162,29 +287,75 @@ export default function HomeScreen({ navigation }: Props) {
         return (
           <Pressable
             key={cat.id}
-            style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
+            style={styles.tab}
             onPress={() => handleChipPress(cat.slug)}
           >
             <Text
               style={[
-                styles.chipText,
-                isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
+                styles.tabText,
+                { fontFamily: Fonts.barlow },
+                isSelected ? { color: colors.accent } : { color: colors.textMuted },
               ]}
             >
-              {cat.name.trim()}
+              {cat.name.trim().toUpperCase()}
             </Text>
+            {isSelected && (
+              <View style={[styles.tabUnderline, { backgroundColor: colors.accent }]} />
+            )}
           </Pressable>
         );
       })}
     </ScrollView>
   );
 
+  // --- "All" tab: sections view ---
+  if (selectedSlug === undefined) {
+    if (sectionsLoading) {
+      return (
+        <View style={[styles.flex, { backgroundColor: colors.background }]}>
+          {CategoryTabs}
+          <View style={[styles.centered, { backgroundColor: colors.background }]}>
+            <ActivityIndicator size="large" color={colors.accent} />
+          </View>
+        </View>
+      );
+    }
+    if (sectionsError && sections.length === 0) {
+      return (
+        <View style={[styles.flex, { backgroundColor: colors.background }]}>
+          {CategoryTabs}
+          <View style={[styles.centered, { backgroundColor: colors.background }]}>
+            <Text style={[styles.errorText, { color: colors.textSecondary }]}>{sectionsError}</Text>
+            <Pressable
+              style={[styles.retryButton, { backgroundColor: colors.accent }]}
+              onPress={() => loadSections(categories)}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.flex, { backgroundColor: colors.background }]}>
+        {CategoryTabs}
+        <SectionFeed
+          sections={sections}
+          savedIds={savedIds}
+          onArticlePress={(slug) => navigation.navigate('ArticleDetail', { slug })}
+          onSave={handleSave}
+        />
+      </View>
+    );
+  }
+
+  // --- Individual category tab: flat FlatList ---
   if (loading) {
     return (
-      <View style={styles.flex}>
-        {CategoryChips}
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#C8102E" />
+      <View style={[styles.flex, { backgroundColor: colors.background }]}>
+        {CategoryTabs}
+        <View style={[styles.centered, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       </View>
     );
@@ -192,12 +363,12 @@ export default function HomeScreen({ navigation }: Props) {
 
   if (error && articles.length === 0) {
     return (
-      <View style={styles.flex}>
-        {CategoryChips}
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error}</Text>
+      <View style={[styles.flex, { backgroundColor: colors.background }]}>
+        {CategoryTabs}
+        <View style={[styles.centered, { backgroundColor: colors.background }]}>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
           <Pressable
-            style={styles.retryButton}
+            style={[styles.retryButton, { backgroundColor: colors.accent }]}
             onPress={() => {
               setLoading(true);
               load(1, true, selectedSlug).finally(() => setLoading(false));
@@ -211,22 +382,35 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.flex}>
-      {CategoryChips}
+    <View style={[styles.flex, { backgroundColor: colors.background }]}>
+      {CategoryTabs}
       <FlatList
-        style={styles.list}
+        style={[styles.list, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.listContent}
         data={articles}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ArticleCard
-            article={item}
-            onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
-            showSaveButton
-            saved={savedIds.has(item.id)}
-            onSave={() => handleSave(item)}
-          />
-        )}
+        renderItem={({ item, index }) => {
+          if (index === 0) {
+            return (
+              <HeroCard
+                article={item}
+                onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+                showSaveButton
+                saved={savedIds.has(item.id)}
+                onSave={() => handleSave(item)}
+              />
+            );
+          }
+          return (
+            <HorizontalCard
+              article={item}
+              onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+              showSaveButton
+              saved={savedIds.has(item.id)}
+              onSave={() => handleSave(item)}
+            />
+          );
+        }}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.2}
         onMomentumScrollBegin={() => {
@@ -237,8 +421,8 @@ export default function HomeScreen({ navigation }: Props) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#C8102E"
-            colors={['#C8102E']}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -250,11 +434,9 @@ export default function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   list: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   listContent: {
     paddingVertical: 8,
@@ -263,17 +445,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
     padding: 24,
   },
   errorText: {
     fontSize: 15,
-    color: '#555',
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#C8102E',
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 6,
@@ -287,39 +466,51 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  // Category chips
-  chipsScroll: {
+  // Underline tabs
+  tabsScroll: {
     flexGrow: 0,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
-  chipsContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+  tabsContent: {
+    paddingHorizontal: 8,
     flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  tab: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 0,
     alignItems: 'center',
+    position: 'relative',
   },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  chipSelected: {
-    backgroundColor: '#C8102E',
-  },
-  chipUnselected: {
-    backgroundColor: '#ebebeb',
-  },
-  chipText: {
+  tabText: {
     fontSize: 13,
-    fontWeight: '600',
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
-  chipTextSelected: {
-    color: '#fff',
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
   },
-  chipTextUnselected: {
-    color: '#444',
+  // Section feed
+  sectionHeaderWrapper: {
+    marginHorizontal: 12,
+    marginTop: 18,
+    marginBottom: 10,
+    borderBottomWidth: 2,
+    paddingBottom: 6,
+  },
+  sectionHeaderText: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  sectionDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 4,
   },
 });

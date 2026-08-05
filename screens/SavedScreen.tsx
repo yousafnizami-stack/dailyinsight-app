@@ -4,6 +4,8 @@ import React, { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../components/ArticleCard';
 import { Article } from '../lib/api';
+import { Fonts } from '../lib/fonts';
+import { useTheme } from '../lib/ThemeContext';
 import {
   getSavedArticles,
   removeArticle,
@@ -30,9 +32,9 @@ function savedToArticle(saved: SavedArticle): Article {
 }
 
 export default function SavedScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([]);
 
-  // Reload every time the tab is focused so removals from other screens reflect immediately
   useFocusEffect(
     useCallback(() => {
       getSavedArticles().then(setSavedArticles);
@@ -40,17 +42,18 @@ export default function SavedScreen({ navigation }: Props) {
   );
 
   const handleUnsave = useCallback(async (id: string) => {
-    // Optimistic update
     setSavedArticles((prev) => prev.filter((a) => a.id !== id));
     await removeArticle(id);
   }, []);
 
   if (savedArticles.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Ionicons name="bookmark-outline" size={56} color="#ccc" style={styles.emptyIcon} />
-        <Text style={styles.emptyTitle}>No saved articles yet</Text>
-        <Text style={styles.emptySubtitle}>
+      <View style={[styles.empty, { backgroundColor: colors.background }]}>
+        <Ionicons name="bookmark-outline" size={56} color={colors.textMuted} style={styles.emptyIcon} />
+        <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: Fonts.playfair }]}>
+          No saved articles yet
+        </Text>
+        <Text style={[styles.emptySubtitle, { color: colors.textMuted, fontFamily: Fonts.sourceSerif }]}>
           Tap the bookmark icon on any article to save it for later.
         </Text>
       </View>
@@ -59,7 +62,7 @@ export default function SavedScreen({ navigation }: Props) {
 
   return (
     <FlatList
-      style={styles.list}
+      style={[styles.list, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.listContent}
       data={savedArticles}
       keyExtractor={(item) => item.id}
@@ -80,7 +83,6 @@ export default function SavedScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   list: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   listContent: {
     paddingVertical: 8,
@@ -89,23 +91,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
     padding: 32,
   },
   emptyIcon: {
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: 20,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
 });

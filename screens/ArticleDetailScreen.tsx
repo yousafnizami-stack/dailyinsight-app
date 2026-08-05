@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import RichTextRenderer from '../components/RichTextRenderer';
 import { Article, fetchArticleBySlug } from '../lib/api';
+import { Fonts } from '../lib/fonts';
+import { useTheme } from '../lib/ThemeContext';
 import {
-  getSavedArticles,
   isSaved,
   removeArticle,
   saveArticle,
@@ -26,13 +27,23 @@ interface Props {
   navigation: any;
 }
 
-function CategoryBadge({ name }: { name: string }) {
-  return (
-    <View style={styles.badge}>
-      <Text style={styles.badgeText}>{name.toUpperCase()}</Text>
-    </View>
-  );
-}
+// Map author select values to display labels
+const AUTHOR_LABELS: Record<string, string> = {
+  'di-royal-reporter': 'Royal Correspondent',
+  'di-entertainment-desk': 'Entertainment Desk',
+  'di-music-desk': 'Music Desk',
+  'di-film-desk': 'Film Desk',
+  'web-desk': 'Web Desk',
+  'news-desk': 'News Desk',
+  'celebrity-desk': 'Celebrity Desk',
+  'royal-family-desk': 'Royal Family News Desk',
+  'sophie-marshall': 'Sophie Marshall',
+  'james-okafor': 'James Okafor',
+  'claire-dennison': 'Claire Dennison',
+  'tom-everett': 'Tom Everett',
+  'rachel-hinds': 'Rachel Hinds',
+  'priya-nair': 'Priya Nair',
+};
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -45,12 +56,13 @@ function formatDate(dateString: string): string {
 
 export default function ArticleDetailScreen({ route, navigation }: Props) {
   const { slug } = route.params;
+  const { colors } = useTheme();
+
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  // Reload save state whenever screen focuses
   useFocusEffect(
     useCallback(() => {
       if (article) {
@@ -78,7 +90,6 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     }
   }, [article, saved]);
 
-  // Update the header bookmark button whenever saved state or article changes
   useEffect(() => {
     if (!article) return;
     navigation.setOptions({
@@ -107,7 +118,6 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           if (data?.title) {
             navigation.setOptions({ title: data.title });
           }
-          // Check initial save state
           if (data) {
             isSaved(data.id).then(setSaved);
           }
@@ -126,25 +136,35 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#C8102E" />
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   if (error || !article) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error ?? 'Article not found.'}</Text>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+          {error ?? 'Article not found.'}
+        </Text>
+        <Pressable
+          style={[styles.backButton, { backgroundColor: colors.accent }]}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>Go Back</Text>
         </Pressable>
       </View>
     );
   }
 
+  const authorLabel = article.author ? (AUTHOR_LABELS[article.author] ?? article.author) : null;
+
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[styles.scroll, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
+    >
       {article.featuredImageUrl ? (
         <Image
           source={{ uri: article.featuredImageUrl }}
@@ -153,15 +173,38 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           transition={200}
         />
       ) : (
-        <View style={[styles.heroImage, styles.heroPlaceholder]} />
+        <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />
       )}
 
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        {/* Eyebrow: category */}
         {article.category?.name ? (
-          <CategoryBadge name={article.category.name} />
+          <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
+            {article.category.name.toUpperCase()}
+          </Text>
         ) : null}
-        <Text style={styles.title}>{article.title}</Text>
-        <Text style={styles.date}>{formatDate(article.publishedAt)}</Text>
+
+        {/* H1: headline */}
+        <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}>
+          {article.title}
+        </Text>
+
+        {/* Dek: excerpt */}
+        {article.excerpt ? (
+          <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif }]}>
+            {article.excerpt}
+          </Text>
+        ) : null}
+
+        {/* Byline + date row */}
+        <Text style={[styles.byline, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+          {authorLabel
+            ? `${authorLabel} · ${formatDate(article.publishedAt)}`
+            : formatDate(article.publishedAt)}
+        </Text>
+
+        {/* Horizontal divider */}
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
       </View>
 
       <RichTextRenderer body={article.body} />
@@ -172,23 +215,19 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
     padding: 24,
   },
   errorText: {
     fontSize: 15,
-    color: '#555',
     textAlign: 'center',
     marginBottom: 16,
   },
   backButton: {
-    backgroundColor: '#C8102E',
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 6,
@@ -202,41 +241,35 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9,
   },
-  heroPlaceholder: {
-    backgroundColor: '#C8102E',
-  },
   header: {
     padding: 16,
-    paddingBottom: 12,
+    paddingBottom: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
     marginBottom: 4,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: '#C8102E',
-    borderRadius: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginBottom: 10,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#C8102E',
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111',
-    lineHeight: 32,
+  eyebrow: {
+    fontSize: 12,
+    letterSpacing: 1.2,
     marginBottom: 8,
   },
-  date: {
-    fontSize: 13,
-    color: '#888',
+  headline: {
+    fontSize: 30,
+    lineHeight: 38,
+    marginBottom: 10,
+  },
+  dek: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  byline: {
+    fontSize: 12,
+    letterSpacing: 0.3,
+    marginBottom: 14,
+  },
+  divider: {
+    height: 1,
+    marginBottom: 4,
   },
   headerBookmark: {
     marginRight: 4,

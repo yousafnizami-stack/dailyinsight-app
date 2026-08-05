@@ -10,15 +10,12 @@ import { timeAgo } from '../lib/timeAgo';
 interface Props {
   article: Article;
   onPress: () => void;
-  /** Show the bookmark toggle button over the image */
   showSaveButton?: boolean;
-  /** Whether the article is currently saved */
   saved?: boolean;
-  /** Called when the bookmark button is tapped */
   onSave?: () => void;
 }
 
-export default function ArticleCard({
+export default function HorizontalCard({
   article,
   onPress,
   showSaveButton = false,
@@ -29,20 +26,21 @@ export default function ArticleCard({
 
   return (
     <Pressable
-      style={[styles.card, { backgroundColor: colors.card }]}
+      style={[styles.card, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
       onPress={onPress}
       android_ripple={{ color: colors.border }}
     >
+      {/* Image column */}
       <View style={styles.imageWrapper}>
         {article.featuredImageUrl ? (
           <Image
             source={{ uri: article.featuredImageUrl }}
-            style={styles.cardImage}
+            style={styles.image}
             contentFit="cover"
             transition={200}
           />
         ) : (
-          <View style={[styles.cardImage, { backgroundColor: colors.accent }]} />
+          <View style={[styles.image, { backgroundColor: colors.accent }]} />
         )}
 
         {showSaveButton && (
@@ -58,7 +56,7 @@ export default function ArticleCard({
             <View style={styles.bookmarkCircle}>
               <Ionicons
                 name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={18}
+                size={14}
                 color="#fff"
               />
             </View>
@@ -66,19 +64,24 @@ export default function ArticleCard({
         )}
       </View>
 
-      <View style={styles.cardBody}>
+      {/* Text column */}
+      <View style={styles.body}>
         {article.category?.name ? (
-          <Text style={[styles.badgeText, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}>
+          <Text
+            style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}
+          >
             {article.category.name.toUpperCase()}
           </Text>
         ) : null}
         <Text
-          style={[styles.cardTitle, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
+          style={[styles.headline, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
           numberOfLines={2}
         >
           {article.title}
         </Text>
-        <Text style={[styles.cardTime, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+        <Text
+          style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}
+        >
           {timeAgo(article.publishedAt)}
         </Text>
       </View>
@@ -88,51 +91,57 @@ export default function ArticleCard({
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: 'row',
     marginHorizontal: 12,
-    marginVertical: 6,
-    borderRadius: 6,
+    marginVertical: 4,
+    borderRadius: 4,
     overflow: 'hidden',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   imageWrapper: {
     position: 'relative',
+    width: '40%',
+    aspectRatio: 1,
   },
-  cardImage: {
+  image: {
     width: '100%',
-    aspectRatio: 16 / 9,
+    height: '100%',
   },
   bookmarkButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
   },
   bookmarkCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardBody: {
-    padding: 12,
+  body: {
+    flex: 1,
+    padding: 10,
+    justifyContent: 'center',
   },
-  badgeText: {
+  eyebrow: {
     fontSize: 10,
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  cardTitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 6,
+  headline: {
+    fontSize: 14,
+    lineHeight: 19,
+    marginBottom: 5,
   },
-  cardTime: {
-    fontSize: 12,
+  timestamp: {
+    fontSize: 10,
     letterSpacing: 0.2,
   },
 });

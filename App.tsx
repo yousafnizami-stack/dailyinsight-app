@@ -3,12 +3,26 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import {
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_400Regular,
+} from '@expo-google-fonts/playfair-display';
+import {
+  BarlowCondensed_600SemiBold,
+  BarlowCondensed_700Bold,
+} from '@expo-google-fonts/barlow-condensed';
+import {
+  SourceSerif4_400Regular,
+  SourceSerif4_600SemiBold,
+} from '@expo-google-fonts/source-serif-4';
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
+import { ThemeProvider, useTheme } from './lib/ThemeContext';
 
 export type RootStackParamList = {
   Tabs: undefined;
@@ -25,15 +39,19 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function HomeTabs() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerStyle: { backgroundColor: '#C8102E' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
-        tabBarActiveTintColor: '#C8102E',
-        tabBarInactiveTintColor: '#999',
-        tabBarStyle: { borderTopColor: '#eee' },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
+        },
       }}
     >
       <Tab.Screen
@@ -77,7 +95,8 @@ function HomeTabs() {
   );
 }
 
-export default function App() {
+function AppNavigator() {
+  const { colors } = useTheme();
   return (
     <NavigationContainer>
       <StatusBar style="light" />
@@ -87,6 +106,7 @@ export default function App() {
           headerTintColor: '#fff',
           headerTitleStyle: { fontWeight: '700' },
           headerBackTitle: 'Back',
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen
@@ -101,5 +121,26 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_400Regular,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    SourceSerif4_400Regular,
+    SourceSerif4_600SemiBold,
+  });
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: '#C8102E' }} />;
+  }
+
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
   );
 }
