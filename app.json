@@ -13,7 +13,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "backgroundColor": "#C8102E"
+      "backgroundColor": "#C8102E",
+      "bundleIdentifier": "com.anonymous.dailyinsight-app"
     },
     "android": {
       "backgroundColor": "#C8102E",
@@ -27,9 +28,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-image"
-    ]
+    }
   }
 }

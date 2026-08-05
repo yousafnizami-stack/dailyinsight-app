@@ -105,7 +105,7 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
 </head>
 <body>
   <iframe
-    src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&origin=https://www.dailyinsight.co.uk"
+    src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=en&origin=https://www.dailyinsight.co.uk"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
   ></iframe>
@@ -116,7 +116,8 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
       <WebView
         source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
         style={styles.webview}
-        allowsFullscreenVideo
+        allowsFullscreenVideo={false}
+        allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
         javaScriptEnabled={true}
         cacheEnabled={true}
