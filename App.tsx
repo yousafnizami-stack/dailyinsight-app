@@ -17,46 +17,7 @@ import {
   SourceSerif4_600SemiBold,
 } from '@expo-google-fonts/source-serif-4';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
-function HomeHeaderTitle() {
-  return (
-    <View style={headerStyles.container}>
-      <Text style={headerStyles.wordmarkRow}>
-        <Text style={headerStyles.wordmarkDaily}>Daily</Text>
-        <Text style={headerStyles.wordmarkInsight}>Insight</Text>
-      </Text>
-    </View>
-  );
-}
-
-const headerStyles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 7,
-  },
-  wordmarkRow: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 34,
-    lineHeight: 45,
-    letterSpacing: 0.3,
-  },
-  wordmarkDaily: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 34,
-    color: '#FFFFFF',
-    lineHeight: 45,
-    letterSpacing: 0.3,
-  },
-  wordmarkInsight: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 34,
-    color: '#D4AF37',
-    lineHeight: 45,
-    letterSpacing: 0.3,
-  },
-});
+import { Text, View } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
@@ -97,10 +58,7 @@ function HomeTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          headerTitle: () => <HomeHeaderTitle />,
-          headerStyle: { backgroundColor: '#C8102E' },
-          headerTitleAlign: 'center',
-          headerTitleContainerStyle: { flex: 1 },
+          headerShown: false,
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>🏠</Text>

@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import HeroCard from '../components/HeroCard';
 import HorizontalCard from '../components/HorizontalCard';
 import {
@@ -145,7 +146,15 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Masthead — full-bleed crimson wordmark bar */}
+      <View style={styles.masthead}>
+        <Text style={styles.mastheadText}>
+          <Text style={styles.mastheadDaily}>Daily</Text>
+          <Text style={styles.mastheadInsight}>Insight</Text>
+        </Text>
+      </View>
       {/* Chip row — fixed above scroll content */}
       <ScrollView
         horizontal
@@ -221,11 +230,31 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         ))}
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  masthead: {
+    backgroundColor: '#C8102E',
+    paddingBottom: 12,
+    alignItems: 'center',
+  },
+  mastheadText: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+  },
+  mastheadDaily: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+    color: '#FFFFFF',
+  },
+  mastheadInsight: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+    color: '#D4AF37',
+  },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',

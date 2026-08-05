@@ -10,7 +10,6 @@ import {
   Share,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import RichTextRenderer from '../components/RichTextRenderer';
@@ -108,23 +107,24 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerRight}>
-          <TouchableOpacity
+          <Pressable
             onPress={handleShare}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ backgroundColor: 'transparent' }}
           >
             <Ionicons name="share-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={handleSave}
-            style={styles.headerBookmark}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ backgroundColor: 'transparent' }}
           >
             <Ionicons
               name={saved ? 'bookmark' : 'bookmark-outline'}
               size={22}
-              color="#000000"
+              color="#fff"
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ),
     });
