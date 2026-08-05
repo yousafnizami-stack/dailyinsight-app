@@ -1,12 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Article } from '../lib/api';
 import { timeAgo } from '../lib/timeAgo';
 
 interface Props {
   article: Article;
   onPress: () => void;
+  /** Show the bookmark toggle button over the image */
+  showSaveButton?: boolean;
+  /** Whether the article is currently saved */
+  saved?: boolean;
+  /** Called when the bookmark button is tapped */
+  onSave?: () => void;
 }
 
 function CategoryBadge({ name }: { name: string }) {
@@ -17,19 +24,51 @@ function CategoryBadge({ name }: { name: string }) {
   );
 }
 
-export default function ArticleCard({ article, onPress }: Props) {
+export default function ArticleCard({
+  article,
+  onPress,
+  showSaveButton = false,
+  saved = false,
+  onSave,
+}: Props) {
   return (
     <Pressable style={styles.card} onPress={onPress} android_ripple={{ color: '#f0f0f0' }}>
-      {article.featuredImageUrl ? (
-        <Image
-          source={{ uri: article.featuredImageUrl }}
-          style={styles.cardImage}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
-      )}
+      {/* Image wrapper — needs position:relative so the bookmark button can be
+          absolutely positioned inside it */}
+      <View style={styles.imageWrapper}>
+        {article.featuredImageUrl ? (
+          <Image
+            source={{ uri: article.featuredImageUrl }}
+            style={styles.cardImage}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
+        )}
+
+        {showSaveButton && (
+          <TouchableOpacity
+            style={styles.bookmarkButton}
+            onPress={(e) => {
+              // Prevent the touch from propagating to the card's Pressable
+              e.stopPropagation();
+              onSave?.();
+            }}
+            activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <View style={styles.bookmarkCircle}>
+              <Ionicons
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                color="#fff"
+              />
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <View style={styles.cardBody}>
         {article.category?.name ? (
           <CategoryBadge name={article.category.name} />
@@ -56,12 +95,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  imageWrapper: {
+    position: 'relative',
+  },
   cardImage: {
     width: '100%',
     aspectRatio: 16 / 9,
   },
   cardImagePlaceholder: {
     backgroundColor: '#C8102E',
+  },
+  bookmarkButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  bookmarkCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardBody: {
     padding: 12,

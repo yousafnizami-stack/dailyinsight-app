@@ -1,15 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import RichTextRenderer from '../components/RichTextRenderer';
 import { Article, fetchArticleBySlug } from '../lib/api';
+import {
+  getSavedArticles,
+  isSaved,
+  removeArticle,
+  saveArticle,
+  SavedArticle,
+} from '../lib/savedArticles';
 
 interface Props {
   route: { params: { slug: string } };
@@ -38,6 +48,55 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Reload save state whenever screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      if (article) {
+        isSaved(article.id).then(setSaved);
+      }
+    }, [article])
+  );
+
+  const handleSave = useCallback(async () => {
+    if (!article) return;
+    if (saved) {
+      setSaved(false);
+      await removeArticle(article.id);
+    } else {
+      setSaved(true);
+      const toSave: SavedArticle = {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        publishedAt: article.publishedAt,
+        featuredImageUrl: article.featuredImageUrl,
+        category: article.category,
+      };
+      await saveArticle(toSave);
+    }
+  }, [article, saved]);
+
+  // Update the header bookmark button whenever saved state or article changes
+  useEffect(() => {
+    if (!article) return;
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleSave}
+          style={styles.headerBookmark}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name={saved ? 'bookmark' : 'bookmark-outline'}
+            size={22}
+            color="#fff"
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [article, saved, handleSave, navigation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +106,10 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           setArticle(data);
           if (data?.title) {
             navigation.setOptions({ title: data.title });
+          }
+          // Check initial save state
+          if (data) {
+            isSaved(data.id).then(setSaved);
           }
         }
       })
@@ -174,5 +237,8 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 13,
     color: '#888',
+  },
+  headerBookmark: {
+    marginRight: 4,
   },
 });

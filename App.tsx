@@ -1,11 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Text } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
+import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 
 export type RootStackParamList = {
@@ -16,6 +18,7 @@ export type RootStackParamList = {
 export type TabParamList = {
   Home: undefined;
   Search: undefined;
+  Saved: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -52,6 +55,21 @@ function HomeTabs() {
           tabBarLabel: 'Search',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>🔍</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Saved"
+        component={SavedScreen}
+        options={{
+          title: 'Saved',
+          tabBarLabel: 'Saved',
+          tabBarIcon: ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
+            <Ionicons
+              name={focused ? 'bookmark' : 'bookmark-outline'}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

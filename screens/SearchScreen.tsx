@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,6 +10,12 @@ import {
 } from 'react-native';
 import ArticleCard from '../components/ArticleCard';
 import { Article, searchArticles } from '../lib/api';
+import {
+  getSavedArticles,
+  removeArticle,
+  saveArticle,
+  SavedArticle,
+} from '../lib/savedArticles';
 
 interface Props {
   navigation: any;
@@ -20,6 +27,43 @@ export default function SearchScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  // Reload saved IDs whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getSavedArticles().then((saved) => {
+        setSavedIds(new Set(saved.map((a) => a.id)));
+      });
+    }, [])
+  );
+
+  const handleSave = useCallback(
+    async (article: Article) => {
+      const id = article.id;
+      if (savedIds.has(id)) {
+        setSavedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        await removeArticle(id);
+      } else {
+        setSavedIds((prev) => new Set(prev).add(id));
+        const toSave: SavedArticle = {
+          id: article.id,
+          title: article.title,
+          slug: article.slug,
+          publishedAt: article.publishedAt,
+          featuredImageUrl: article.featuredImageUrl,
+          category: article.category,
+        };
+        await saveArticle(toSave);
+      }
+    },
+    [savedIds]
+  );
 
   const runSearch = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -94,6 +138,9 @@ export default function SearchScreen({ navigation }: Props) {
             <ArticleCard
               article={item}
               onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+              showSaveButton
+              saved={savedIds.has(item.id)}
+              onSave={() => handleSave(item)}
             />
           )}
           contentContainerStyle={

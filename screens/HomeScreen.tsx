@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +12,12 @@ import {
 } from 'react-native';
 import ArticleCard from '../components/ArticleCard';
 import { Article, Category, fetchArticles, fetchCategories } from '../lib/api';
+import {
+  getSavedArticles,
+  removeArticle,
+  saveArticle,
+  SavedArticle,
+} from '../lib/savedArticles';
 
 interface Props {
   navigation: any;
@@ -37,7 +44,45 @@ export default function HomeScreen({ navigation }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string | undefined>(undefined);
 
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
   const onEndReachedCalledDuringMomentum = useRef(false);
+
+  // Reload saved IDs whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getSavedArticles().then((saved) => {
+        setSavedIds(new Set(saved.map((a) => a.id)));
+      });
+    }, [])
+  );
+
+  const handleSave = useCallback(
+    async (article: Article) => {
+      const id = article.id;
+      if (savedIds.has(id)) {
+        // Optimistic UI update
+        setSavedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        await removeArticle(id);
+      } else {
+        setSavedIds((prev) => new Set(prev).add(id));
+        const toSave: SavedArticle = {
+          id: article.id,
+          title: article.title,
+          slug: article.slug,
+          publishedAt: article.publishedAt,
+          featuredImageUrl: article.featuredImageUrl,
+          category: article.category,
+        };
+        await saveArticle(toSave);
+      }
+    },
+    [savedIds]
+  );
 
   const load = useCallback(
     async (pageNum: number, replace: boolean, categorySlug?: string) => {
@@ -177,6 +222,9 @@ export default function HomeScreen({ navigation }: Props) {
           <ArticleCard
             article={item}
             onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+            showSaveButton
+            saved={savedIds.has(item.id)}
+            onSave={() => handleSave(item)}
           />
         )}
         onEndReached={handleEndReached}
