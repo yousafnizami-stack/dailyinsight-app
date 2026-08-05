@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 // Payload lexical format bitflags
 const FORMAT_BOLD = 1;
@@ -113,17 +113,140 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
     allowfullscreen
   ></iframe>
   <script>
-    document.addEventListener('fullscreenchange', function() {
-      if (!document.fullscreenElement) {
+    // ── DIAGNOSTIC BRIDGE ──────────────────────────────────────────────────────
+    // All log() calls here are forwarded to React Native via postMessage so we
+    // can observe real on-device behaviour without a debugger attached.
+    function rnLog(tag, payload) {
+      try {
+        var msg = JSON.stringify({ tag: tag, payload: payload, ts: Date.now() });
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(msg);
+        }
+      } catch (e) {}
+    }
+
+    rnLog('DIAG_INIT', 'injected script running');
+
+    // ── DIAGNOSTIC 1: YouTube iframe API caption state ─────────────────────────
+    // The YouTube Player API sends postMessage events from the iframe.
+    // We listen for them here and forward the raw data to React Native.
+    // The onApiChange event fires when a module (e.g. captions) becomes available.
+    // We then use the getOption postMessage command to query the active caption track.
+    window.addEventListener('message', function(evt) {
+      // Only care about messages coming from the YouTube iframe.
+      if (!evt.origin || evt.origin.indexOf('youtube.com') === -1) return;
+
+      var raw = evt.data;
+      var parsed = null;
+      try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) {}
+
+      rnLog('YT_MESSAGE', { origin: evt.origin, raw: raw });
+
+      if (!parsed) return;
+
+      // When the player is ready, query the initial caption state.
+      if (parsed.event === 'onReady' || parsed.info === 0 /* UNSTARTED => player ready */) {
+        rnLog('YT_PLAYER_READY', 'querying caption track via getOption');
         var iframe = document.getElementById('yt');
         if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+          iframe.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func: 'getOption', args: ['captions', 'track'] }),
+            '*'
+          );
+        }
+      }
+
+      // When a module becomes available (onApiChange), query caption state.
+      if (parsed.event === 'onApiChange') {
+        rnLog('YT_API_CHANGE', { info: parsed.info });
+        var iframe2 = document.getElementById('yt');
+        if (iframe2 && iframe2.contentWindow) {
+          iframe2.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func: 'getOption', args: ['captions', 'track'] }),
+            '*'
+          );
+        }
+      }
+
+      // Surface any caption-related data in player state.
+      if (parsed.event === 'infoDelivery' && parsed.info) {
+        var info = parsed.info;
+        if (info.playerState !== undefined || info.currentTime !== undefined) {
+          // Not a caption event; ignore to reduce noise.
+        } else {
+          // Likely a getOption response (caption track data).
+          rnLog('YT_OPTION_RESPONSE', { info: info });
         }
       }
     });
+
+    // ── DIAGNOSTIC 2: Fullscreen event coverage (all vendor prefixes) ──────────
+    // iOS WebKit does NOT fire the standard 'fullscreenchange' event.
+    // We register all known prefixed variants to surface which (if any) fire.
+
+    rnLog('FULLSCREEN_API', {
+      fullscreenEnabled: document.fullscreenEnabled,
+      webkitFullscreenEnabled: document.webkitFullscreenEnabled,
+      mozFullScreenEnabled: document.mozFullScreenEnabled,
+      msFullscreenEnabled: document.msFullscreenEnabled,
+    });
+
+    function handleFullscreenChange(evtName) {
+      return function() {
+        var state = {
+          event: evtName,
+          fullscreenElement: document.fullscreenElement ? 'SET' : null,
+          webkitFullscreenElement: document.webkitFullscreenElement ? 'SET' : null,
+          webkitCurrentFullScreenElement: document.webkitCurrentFullScreenElement ? 'SET' : null,
+          mozFullScreenElement: document.mozFullScreenElement ? 'SET' : null,
+          msFullscreenElement: document.msFullscreenElement ? 'SET' : null,
+        };
+        rnLog('FULLSCREEN_CHANGE', state);
+
+        // Resume inline playback when exiting fullscreen (all variants).
+        var isExiting = !document.fullscreenElement
+          && !document.webkitFullscreenElement
+          && !document.webkitCurrentFullScreenElement
+          && !document.mozFullScreenElement
+          && !document.msFullscreenElement;
+
+        if (isExiting) {
+          rnLog('FULLSCREEN_EXIT', 'sending playVideo command');
+          var iframe = document.getElementById('yt');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              '{"event":"command","func":"playVideo","args":""}',
+              '*'
+            );
+          }
+        }
+      };
+    }
+
+    rnLog('FULLSCREEN_LISTENERS', 'registering all vendor-prefixed fullscreenchange listeners');
+    document.addEventListener('fullscreenchange',       handleFullscreenChange('fullscreenchange'));
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange('webkitfullscreenchange'));
+    document.addEventListener('mozfullscreenchange',    handleFullscreenChange('mozfullscreenchange'));
+    document.addEventListener('msfullscreenchange',     handleFullscreenChange('msfullscreenchange'));
+
+    rnLog('DIAG_SETUP_COMPLETE', 'all listeners registered');
+    // ── END DIAGNOSTICS ────────────────────────────────────────────────────────
   </script>
 </body>
 </html>`;
+
+  function handleWebViewMessage(event: WebViewMessageEvent) {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data) as {
+        tag: string;
+        payload: unknown;
+        ts: number;
+      };
+      console.log(`[YT-DIAG][${msg.tag}]`, JSON.stringify(msg.payload), `@ ${msg.ts}`);
+    } catch (e) {
+      console.log('[YT-DIAG][RAW]', event.nativeEvent.data);
+    }
+  }
 
   return (
     <View style={styles.youtubeContainer}>
@@ -140,6 +263,7 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
         androidLayerType="hardware"
+        onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onShouldStartLoadWithRequest={(request) => {
