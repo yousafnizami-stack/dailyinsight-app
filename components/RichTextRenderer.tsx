@@ -73,10 +73,21 @@ function renderInlineChildren(children: LexicalNode[] = [], textColor: string): 
 
 /** Extract YouTube video ID from a youtube.com or youtu.be URL */
 function extractYouTubeId(url: string): string | null {
+  // ?v=VIDEO_ID (youtube.com/watch?v=..., including &t= suffix)
   const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
   if (watchMatch) return watchMatch[1];
+  // youtu.be/VIDEO_ID
   const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
   if (shortMatch) return shortMatch[1];
+  // youtube.com/shorts/VIDEO_ID
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
+  // youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+  // youtube.com/v/VIDEO_ID
+  const vMatch = url.match(/youtube\.com\/v\/([a-zA-Z0-9_-]{11})/);
+  if (vMatch) return vMatch[1];
   return null;
 }
 
@@ -307,12 +318,41 @@ function TwitterEmbed({ url }: { url: string }) {
   </style>
 </head>
 <body>
-  <blockquote class="twitter-tweet">
-    <a href="${tweetUrl}"></a>
+  <blockquote class="twitter-tweet" data-dnt="true" data-conversation="none">
+    <a href="${tweetUrl}">${tweetUrl}</a>
   </blockquote>
+  <script>
+    // Console bridge — forwards errors to RN for diagnosis
+    window.onerror = function(msg, src, line, col, err) {
+      try {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+          JSON.stringify({ tag: 'TW_ERROR', payload: { msg: msg, src: src, line: line } })
+        );
+      } catch(e) {}
+    };
+    var _ce = console.error.bind(console);
+    console.error = function() {
+      try {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+          JSON.stringify({ tag: 'TW_CONSOLE_ERROR', payload: Array.prototype.slice.call(arguments).join(' ') })
+        );
+      } catch(e) {}
+      _ce.apply(console, arguments);
+    };
+  </script>
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </body>
 </html>`;
+
+  function handleWebViewMessage(event: WebViewMessageEvent) {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data) as { tag: string; payload: unknown };
+      console.log(`[TW-DIAG][${msg.tag}]`, JSON.stringify(msg.payload));
+    } catch (e) {
+      console.log('[TW-DIAG][RAW]', event.nativeEvent.data);
+    }
+  }
+
   return (
     <View style={styles.twitterContainer}>
       <WebView
@@ -321,6 +361,7 @@ function TwitterEmbed({ url }: { url: string }) {
         scrollEnabled={false}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
       />
@@ -342,7 +383,13 @@ function isTikTokUrl(url: string): boolean {
 
 function TikTokEmbed({ url }: { url: string }) {
   const [loading, setLoading] = useState(true);
-  const embedUrl = url.trim();
+  const rawUrl = url.trim();
+  // Strip query params for the canonical cite URL (TikTok embed.js requires the clean URL)
+  const embedUrl = rawUrl.split('?')[0];
+  // Extract the numeric video ID from @user/video/ID paths
+  const videoIdMatch = rawUrl.match(/\/video\/(\d+)/);
+  const videoId = videoIdMatch ? videoIdMatch[1] : '';
+  const dataVideoId = videoId ? ` data-video-id="${videoId}"` : '';
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -353,7 +400,7 @@ function TikTokEmbed({ url }: { url: string }) {
   </style>
 </head>
 <body>
-  <blockquote class="tiktok-embed" cite="${embedUrl}" style="max-width:100%;min-width:100%;">
+  <blockquote class="tiktok-embed" cite="${embedUrl}"${dataVideoId} style="max-width:100%;min-width:100%;">
     <section></section>
   </blockquote>
   <script async src="https://www.tiktok.com/embed.js"></script>
