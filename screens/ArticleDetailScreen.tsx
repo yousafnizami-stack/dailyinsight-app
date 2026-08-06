@@ -107,7 +107,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     navigation.setOptions({
       headerLeft: () => (
         <Pressable onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </View>
         </Pressable>
@@ -115,13 +115,13 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="share-outline" size={20} color="#000" />
             </View>
           </Pressable>
           <View style={{ width: 16 }} />
           <Pressable onPress={handleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={20} color="#000" />
             </View>
           </Pressable>

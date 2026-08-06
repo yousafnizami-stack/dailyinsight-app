@@ -30,6 +30,7 @@ export default function HeroCard({
       onPress={onPress}
       android_ripple={{ color: colors.border }}
     >
+      {/* Top divider — sits immediately above the image, symmetric with bottom accent border */}
       {showTopDivider && (
         <View style={{ height: 2, backgroundColor: colors.accent }} />
       )}
@@ -46,7 +47,8 @@ export default function HeroCard({
         )}
       </View>
 
-      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : { marginTop: 16 }]}>
+      {/* Bottom accent border — no extra marginTop gap, the border itself is the divider */}
+      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent } : {}]}>
         {article.category?.name ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
             {article.category.name.toUpperCase()}

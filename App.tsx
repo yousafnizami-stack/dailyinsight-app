@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import {
   PlayfairDisplay_700Bold,
   PlayfairDisplay_400Regular,
@@ -16,13 +17,16 @@ import {
   SourceSerif4_400Regular,
   SourceSerif4_600SemiBold,
 } from '@expo-google-fonts/source-serif-4';
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
+
+// Keep the native splash screen visible until we explicitly hide it
+SplashScreen.preventAutoHideAsync();
 
 export type RootStackParamList = {
   Tabs: undefined;
@@ -60,8 +64,8 @@ function HomeTabs() {
         options={{
           headerShown: false,
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Text style={{ fontSize: size, color }}>🏠</Text>
+          tabBarIcon: ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -71,8 +75,8 @@ function HomeTabs() {
         options={{
           title: 'Search',
           tabBarLabel: 'Search',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Text style={{ fontSize: size, color }}>🔍</Text>
+          tabBarIcon: ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
+            <Ionicons name={focused ? 'search' : 'search-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -141,13 +145,23 @@ export default function App() {
     SourceSerif4_600SemiBold,
   });
 
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      // Hide the native splash screen now that fonts are ready and the app
+      // is about to render — keeps the branded splash visible through cold start
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: '#C8102E' }} />;
+    return null; // Native splash stays visible while fonts load
   }
 
   return (
     <ThemeProvider>
-      <AppNavigator />
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <AppNavigator />
+      </View>
     </ThemeProvider>
   );
 }

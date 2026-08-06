@@ -302,6 +302,30 @@ export default function HomeScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
 
+  // Chip row auto-scroll: track each chip's x position and width
+  const chipScrollRef = useRef<ScrollView>(null);
+  const chipScrollWidth = useRef<number>(0); // visible width of the chip ScrollView
+  const chipLayouts = useRef<Array<{ x: number; width: number }>>([]);
+
+  // Whenever tabIndex changes (tap or swipe), scroll the chip row to keep active chip visible
+  useEffect(() => {
+    const layout = chipLayouts.current[tabIndex];
+    if (!layout || !chipScrollRef.current) return;
+    const visibleWidth = chipScrollWidth.current;
+    if (visibleWidth === 0) return;
+
+    // We don't know current scrollX without an onScroll listener, so always
+    // scroll to a position that centers the chip with padding — safe to call even
+    // if it's already visible (scrollTo with already-current offset is a no-op visually).
+    const PADDING = 40;
+    const targetX = Math.max(0, layout.x - PADDING);
+    chipScrollRef.current.scrollTo({ x: targetX, animated: true });
+  }, [tabIndex]);
+
+  const handleIndexChange = useCallback((index: number) => {
+    setTabIndex(index);
+  }, []);
+
   const renderScene = ({ route }: { route: { key: string; title: string } }) => {
     if (route.key === 'latest') return <LatestScene navigation={navigation} />;
     return <CategoryScene slug={route.key} navigation={navigation} />;
@@ -318,12 +342,14 @@ export default function HomeScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        {/* Chip row — drives TabView index */}
+        {/* Chip row — drives TabView index; auto-scrolls to keep active chip visible */}
         <ScrollView
+          ref={chipScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           style={[shellStyles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
           contentContainerStyle={shellStyles.chipRowContent}
+          onLayout={(e) => { chipScrollWidth.current = e.nativeEvent.layout.width; }}
         >
           {TAB_ROUTES.map((route, chipIndex) => {
             const isSelected = tabIndex === chipIndex;
@@ -332,6 +358,12 @@ export default function HomeScreen({ navigation }: Props) {
                 key={route.key}
                 onPress={() => setTabIndex(chipIndex)}
                 style={[shellStyles.chip, isSelected && shellStyles.chipSelected]}
+                onLayout={(e) => {
+                  chipLayouts.current[chipIndex] = {
+                    x: e.nativeEvent.layout.x,
+                    width: e.nativeEvent.layout.width,
+                  };
+                }}
               >
                 <Text
                   style={[
@@ -350,7 +382,7 @@ export default function HomeScreen({ navigation }: Props) {
         <TabView
           navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
           renderScene={renderScene}
-          onIndexChange={setTabIndex}
+          onIndexChange={handleIndexChange}
           renderTabBar={() => null}
           lazy
           renderLazyPlaceholder={() => (
