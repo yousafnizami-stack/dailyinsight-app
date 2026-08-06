@@ -117,7 +117,14 @@ function AppNavigator() {
         <Stack.Screen
           name="ArticleDetail"
           component={ArticleDetailScreen}
-          options={{ title: 'Article' }}
+          options={{
+            headerTitle: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -20 }}>
+                <Text style={{ fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, color: '#fff' }}>Daily</Text>
+                <Text style={{ fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, color: '#D4AF37' }}>Insight</Text>
+              </View>
+            ),
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

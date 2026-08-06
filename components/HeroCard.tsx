@@ -39,7 +39,7 @@ export default function HeroCard({
         )}
       </View>
 
-      <View style={[styles.body, { borderTopWidth: 3, borderTopColor: colors.accent }]}>
+      <View style={[styles.body, { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 }]}>
         {article.category?.name ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
             {article.category.name.toUpperCase()}

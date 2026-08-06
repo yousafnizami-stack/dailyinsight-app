@@ -22,7 +22,7 @@ export default function HorizontalCard({
 
   return (
     <Pressable
-      style={[styles.card, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+      style={[styles.card, { backgroundColor: colors.card }]}
       onPress={onPress}
       android_ripple={{ color: colors.border }}
     >
@@ -72,7 +72,6 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 4,
     overflow: 'hidden',
-    borderBottomWidth: StyleSheet.hairlineWidth,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

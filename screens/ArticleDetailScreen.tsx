@@ -105,38 +105,28 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (!article) return;
     navigation.setOptions({
-      unstable_headerRightItems: () => [
-        {
-          type: 'custom' as const,
-          hidesSharedBackground: true,
-          element: (
-            <Pressable
-              onPress={handleShare}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{ backgroundColor: 'transparent', paddingHorizontal: 4 }}
-            >
-              <Ionicons name="share-outline" size={22} color="#fff" />
-            </Pressable>
-          ),
-        },
-        {
-          type: 'custom' as const,
-          hidesSharedBackground: true,
-          element: (
-            <Pressable
-              onPress={handleSave}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{ backgroundColor: 'transparent', paddingHorizontal: 4, marginLeft: 8 }}
-            >
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={22}
-                color="#000000"
-              />
-            </Pressable>
-          ),
-        },
-      ],
+      headerLeft: () => (
+        <Pressable onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </View>
+        </Pressable>
+      ),
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="share-outline" size={20} color="#000" />
+            </View>
+          </Pressable>
+          <View style={{ width: 16 }} />
+          <Pressable onPress={handleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={20} color="#000" />
+            </View>
+          </Pressable>
+        </View>
+      ),
     });
   }, [article, saved, handleSave, handleShare, navigation]);
 
@@ -146,9 +136,6 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
       .then((data) => {
         if (!cancelled) {
           setArticle(data);
-          if (data?.title) {
-            navigation.setOptions({ title: data.title });
-          }
           if (data) {
             isSaved(data.id).then(setSaved);
           }
@@ -207,7 +194,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />
       )}
 
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={styles.header}>
         {/* Eyebrow: category */}
         {article.category?.name ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
@@ -275,7 +262,6 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     paddingBottom: 0,
-    borderBottomWidth: 1,
     marginBottom: 4,
   },
   eyebrow: {
