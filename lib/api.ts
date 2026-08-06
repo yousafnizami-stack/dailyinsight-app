@@ -153,7 +153,7 @@ export async function fetchArticlesByCategory(
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
   const params = new URLSearchParams({
     'where[slug][equals]': slug,
-    depth: '0',
+    depth: '1', // body-embedded Media nodes need relationship expansion to render images
     limit: '1',
   });
 
