@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Linking, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
@@ -317,6 +317,72 @@ function EmbedBlock({ fields }: { fields: any }) {
   );
 }
 
+function CarouselBlock({ fields }: { fields: any }) {
+  const images: any[] = fields?.images ?? [];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const carouselWidth = screenWidth - 32; // matches container paddingHorizontal: 16 on each side
+
+  if (images.length === 0) return null;
+
+  return (
+    <View style={carouselStyles.wrapper}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        style={{ width: carouselWidth }}
+        onScroll={(e) => {
+          const page = Math.round(e.nativeEvent.contentOffset.x / carouselWidth);
+          setActiveIndex(page);
+        }}
+        scrollEventThrottle={16}
+      >
+        {images.map((item: any, idx: number) => {
+          const media = item?.image;
+          const imageUrl = media?.cloudinaryUrl ?? media?.url;
+          const caption: string = item?.caption ?? media?.caption ?? '';
+          const naturalWidth: number | undefined = media?.width;
+          const naturalHeight: number | undefined = media?.height;
+          const aspectRatio =
+            naturalWidth && naturalHeight ? naturalWidth / naturalHeight : 4 / 3;
+
+          return (
+            <View key={item?.id ?? idx} style={[carouselStyles.slide, { width: carouselWidth }]}>
+              {imageUrl ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={[carouselStyles.image, { aspectRatio }]}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[carouselStyles.imagePlaceholder, { aspectRatio }]} />
+              )}
+              {caption ? (
+                <Text style={carouselStyles.caption} numberOfLines={3}>
+                  {caption}
+                </Text>
+              ) : null}
+            </View>
+          );
+        })}
+      </ScrollView>
+      {images.length > 1 ? (
+        <View style={carouselStyles.dots}>
+          {images.map((_: any, idx: number) => (
+            <View
+              key={idx}
+              style={[
+                carouselStyles.dot,
+                idx === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function BlockNode({
   node,
   index,
@@ -411,7 +477,7 @@ function BlockNode({
   if (node.type === 'block') {
     const blockType = node.fields?.blockType ?? node.blockType;
     if (blockType === 'carousel') {
-      return null;
+      return <CarouselBlock key={index} fields={node.fields} />;
     }
     if (blockType === 'embedBlock') {
       return <EmbedBlock key={index} fields={node.fields} />;
@@ -561,5 +627,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.85)',
+  },
+});
+
+const carouselStyles = StyleSheet.create({
+  wrapper: {
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  slide: {
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    borderRadius: 6,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+  },
+  caption: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 6,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  dotActive: {
+    backgroundColor: '#C8102E',
+  },
+  dotInactive: {
+    backgroundColor: '#ccc',
   },
 });

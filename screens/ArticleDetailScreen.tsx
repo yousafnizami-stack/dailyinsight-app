@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -80,6 +81,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -121,6 +123,21 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         : { title: article.title, message: `${article.title} ${articleUrl}` }
     );
   }, [article]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const data = await fetchArticleBySlug(slug);
+      setArticle(data);
+      if (data) {
+        isSaved(data.id).then(setSaved);
+      }
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to load article');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -240,6 +257,14 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
       <ScrollView
         style={[styles.scroll, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       >
         {/* Featured image — shown immediately from preview params */}
         {displayImage ? (

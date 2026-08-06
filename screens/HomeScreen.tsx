@@ -94,6 +94,9 @@ function ChipTabBar({
           <Pressable
             key={route.key}
             onPress={() => {
+              // Snap position immediately so interpolated color+underline update in sync with the tab jump.
+              // position is typed as AnimatedInterpolation but at runtime is the TabView's Animated.Value.
+              (position as unknown as Animated.Value).setValue(chipIndex);
               jumpTo(route.key);
               onChipPress(chipIndex);
             }}
@@ -306,7 +309,15 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadArticles = useCallback(async () => {
+    setError(null);
+    const data = await fetchArticlesByCategory(slug, 40);
+    const displayCount = Math.floor(data.length / 4) * 4;
+    setArticles(data.slice(0, displayCount));
+  }, [slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -328,6 +339,15 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
       cancelled = true;
     };
   }, [slug]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadArticles();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadArticles]);
 
   if (loading) {
     return <SkeletonLoader />;
@@ -361,6 +381,14 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
       style={{ flex: 1, backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+        />
+      }
     >
       {blocks.map((block, blockIdx) => (
         <View key={blockIdx}>
