@@ -1,5 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Linking, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
@@ -317,68 +320,258 @@ function EmbedBlock({ fields }: { fields: any }) {
   );
 }
 
+const GOLD = '#D4AF37';
+
 function CarouselBlock({ fields }: { fields: any }) {
   const images: any[] = fields?.images ?? [];
   const [activeIndex, setActiveIndex] = useState(0);
-  const carouselWidth = screenWidth - 32; // matches container paddingHorizontal: 16 on each side
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const carouselScrollRef = useRef<ScrollView>(null);
+  const lightboxScrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
+
+  // Full screen width — carousel runs edge-to-edge (container has no horizontal padding for the block)
+  const carouselWidth = screenWidth;
+  // Lightbox uses full screen
+  const lightboxWidth = screenWidth;
+  const lightboxHeight = Dimensions.get('window').height;
 
   if (images.length === 0) return null;
 
+  const total = images.length;
+
+  function handleCarouselScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const page = Math.round(e.nativeEvent.contentOffset.x / carouselWidth);
+    setActiveIndex(page);
+  }
+
+  function scrollCarouselTo(index: number) {
+    const clamped = Math.max(0, Math.min(total - 1, index));
+    carouselScrollRef.current?.scrollTo({ x: clamped * carouselWidth, animated: true });
+    setActiveIndex(clamped);
+  }
+
+  function openLightbox() {
+    setLightboxIndex(activeIndex);
+    setLightboxOpen(true);
+    // Scroll lightbox to match current carousel position after opening
+    setTimeout(() => {
+      lightboxScrollRef.current?.scrollTo({ x: activeIndex * lightboxWidth, animated: false });
+    }, 50);
+  }
+
+  function handleLightboxScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const page = Math.round(e.nativeEvent.contentOffset.x / lightboxWidth);
+    setLightboxIndex(page);
+  }
+
+  function scrollLightboxTo(index: number) {
+    const clamped = Math.max(0, Math.min(total - 1, index));
+    lightboxScrollRef.current?.scrollTo({ x: clamped * lightboxWidth, animated: true });
+    setLightboxIndex(clamped);
+  }
+
+  const activeCaption: string =
+    (images[activeIndex]?.caption ?? images[activeIndex]?.image?.caption ?? '').trim();
+  const lightboxCaption: string =
+    (images[lightboxIndex]?.caption ?? images[lightboxIndex]?.image?.caption ?? '').trim();
+
   return (
     <View style={carouselStyles.wrapper}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        style={{ width: carouselWidth }}
-        onScroll={(e) => {
-          const page = Math.round(e.nativeEvent.contentOffset.x / carouselWidth);
-          setActiveIndex(page);
-        }}
-        scrollEventThrottle={16}
-      >
-        {images.map((item: any, idx: number) => {
-          const media = item?.image;
-          const imageUrl = media?.cloudinaryUrl ?? media?.url;
-          const caption: string = item?.caption ?? media?.caption ?? '';
-          const naturalWidth: number | undefined = media?.width;
-          const naturalHeight: number | undefined = media?.height;
-          const aspectRatio =
-            naturalWidth && naturalHeight ? naturalWidth / naturalHeight : 4 / 3;
+      {/* ── Minimized carousel ── */}
+      <View style={[carouselStyles.carouselContainer, { width: carouselWidth }]}>
+        <ScrollView
+          ref={carouselScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={handleCarouselScroll}
+          style={{ width: carouselWidth }}
+        >
+          {images.map((item: any, idx: number) => {
+            const media = item?.image;
+            const imageUrl = media?.cloudinaryUrl ?? media?.url;
+            return (
+              <View
+                key={item?.id ?? idx}
+                style={[carouselStyles.slide, { width: carouselWidth }]}
+              >
+                {imageUrl ? (
+                  <ExpoImage
+                    source={{ uri: imageUrl }}
+                    style={carouselStyles.slideImage}
+                    contentFit="contain"
+                  />
+                ) : (
+                  <View style={[carouselStyles.slideImage, { backgroundColor: '#2A2A2A' }]} />
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
 
-          return (
-            <View key={item?.id ?? idx} style={[carouselStyles.slide, { width: carouselWidth }]}>
-              {imageUrl ? (
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={[carouselStyles.image, { aspectRatio }]}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[carouselStyles.imagePlaceholder, { aspectRatio }]} />
-              )}
-              {caption ? (
-                <Text style={carouselStyles.caption} numberOfLines={3}>
-                  {caption}
-                </Text>
-              ) : null}
+        {/* Expand badge — top-left */}
+        <TouchableOpacity
+          style={carouselStyles.expandBadge}
+          onPress={openLightbox}
+          activeOpacity={0.8}
+          accessibilityLabel="Expand to fullscreen"
+        >
+          <Ionicons name="expand-outline" size={16} color={GOLD} />
+        </TouchableOpacity>
+
+        {/* Counter pill — top-right (only if multiple images) */}
+        {total > 1 && (
+          <View style={carouselStyles.counterPill}>
+            <Text style={carouselStyles.counterText}>
+              {activeIndex + 1} / {total}
+            </Text>
+          </View>
+        )}
+
+        {/* Bottom overlay with dots + caption */}
+        {(total > 1 || activeCaption) && (
+          <View style={carouselStyles.bottomOverlay}>
+            {total > 1 && (
+              <View style={carouselStyles.dotsRow}>
+                {images.map((_: any, i: number) => (
+                  <View
+                    key={i}
+                    style={[
+                      carouselStyles.dot,
+                      i === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+            {activeCaption ? (
+              <Text style={carouselStyles.captionText} numberOfLines={2}>
+                {activeCaption}
+              </Text>
+            ) : null}
+          </View>
+        )}
+
+        {/* Prev arrow */}
+        {total > 1 && activeIndex > 0 && (
+          <TouchableOpacity
+            style={[carouselStyles.arrowBtn, carouselStyles.arrowLeft]}
+            onPress={() => scrollCarouselTo(activeIndex - 1)}
+            activeOpacity={0.7}
+            accessibilityLabel="Previous image"
+          >
+            <Ionicons name="chevron-back" size={18} color={GOLD} />
+          </TouchableOpacity>
+        )}
+
+        {/* Next arrow */}
+        {total > 1 && activeIndex < total - 1 && (
+          <TouchableOpacity
+            style={[carouselStyles.arrowBtn, carouselStyles.arrowRight]}
+            onPress={() => scrollCarouselTo(activeIndex + 1)}
+            activeOpacity={0.7}
+            accessibilityLabel="Next image"
+          >
+            <Ionicons name="chevron-forward" size={18} color={GOLD} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── Fullscreen lightbox modal ── */}
+      <Modal
+        visible={lightboxOpen}
+        animationType="fade"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setLightboxOpen(false)}
+        statusBarTranslucent
+      >
+        <View style={lightboxStyles.container}>
+          {/* Paged image scroll */}
+          <ScrollView
+            ref={lightboxScrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={handleLightboxScroll}
+            style={{ flex: 1 }}
+          >
+            {images.map((item: any, idx: number) => {
+              const media = item?.image;
+              const imageUrl = media?.cloudinaryUrl ?? media?.url;
+              return (
+                <View
+                  key={item?.id ?? idx}
+                  style={[lightboxStyles.page, { width: lightboxWidth, height: lightboxHeight }]}
+                >
+                  {imageUrl ? (
+                    <ExpoImage
+                      source={{ uri: imageUrl }}
+                      style={{ width: lightboxWidth, height: lightboxHeight }}
+                      contentFit="contain"
+                    />
+                  ) : (
+                    <View style={{ width: lightboxWidth, height: lightboxHeight, backgroundColor: '#111' }} />
+                  )}
+                </View>
+              );
+            })}
+          </ScrollView>
+
+          {/* Close button — top-right, safe-area aware */}
+          <TouchableOpacity
+            style={[lightboxStyles.closeBtn, { top: Math.max(insets.top, 50) }]}
+            onPress={() => setLightboxOpen(false)}
+            activeOpacity={0.8}
+            accessibilityLabel="Close lightbox"
+          >
+            <Ionicons name="close" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Caption */}
+          {lightboxCaption ? (
+            <View style={[lightboxStyles.captionContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+              <Text style={lightboxStyles.captionText}>{lightboxCaption}</Text>
             </View>
-          );
-        })}
-      </ScrollView>
-      {images.length > 1 ? (
-        <View style={carouselStyles.dots}>
-          {images.map((_: any, idx: number) => (
-            <View
-              key={idx}
-              style={[
-                carouselStyles.dot,
-                idx === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
-              ]}
-            />
-          ))}
+          ) : null}
+
+          {/* Lightbox counter pill */}
+          {total > 1 && (
+            <View style={[lightboxStyles.counterPill, { top: Math.max(insets.top, 50) }]}>
+              <Text style={lightboxStyles.counterText}>
+                {lightboxIndex + 1} / {total}
+              </Text>
+            </View>
+          )}
+
+          {/* Prev arrow */}
+          {total > 1 && lightboxIndex > 0 && (
+            <TouchableOpacity
+              style={[lightboxStyles.arrowBtn, lightboxStyles.arrowLeft]}
+              onPress={() => scrollLightboxTo(lightboxIndex - 1)}
+              activeOpacity={0.7}
+              accessibilityLabel="Previous image"
+            >
+              <Ionicons name="chevron-back" size={22} color="#fff" />
+            </TouchableOpacity>
+          )}
+
+          {/* Next arrow */}
+          {total > 1 && lightboxIndex < total - 1 && (
+            <TouchableOpacity
+              style={[lightboxStyles.arrowBtn, lightboxStyles.arrowRight]}
+              onPress={() => scrollLightboxTo(lightboxIndex + 1)}
+              activeOpacity={0.7}
+              accessibilityLabel="Next image"
+            >
+              <Ionicons name="chevron-forward" size={22} color="#fff" />
+            </TouchableOpacity>
+          )}
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
@@ -633,43 +826,184 @@ const styles = StyleSheet.create({
 const carouselStyles = StyleSheet.create({
   wrapper: {
     marginVertical: 12,
-    alignItems: 'center',
+    // Negative horizontal margin to break out of the container's paddingHorizontal: 16
+    marginHorizontal: -16,
+  },
+  carouselContainer: {
+    aspectRatio: 3 / 4,
+    backgroundColor: '#1A1A1A',
+    borderWidth: 4,
+    borderColor: GOLD,
+    overflow: 'hidden',
+    position: 'relative',
   },
   slide: {
-    overflow: 'hidden',
+    aspectRatio: 3 / 4,
+    backgroundColor: '#1A1A1A',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  image: {
+  slideImage: {
     width: '100%',
-    borderRadius: 6,
+    height: '100%',
   },
-  imagePlaceholder: {
-    width: '100%',
-    backgroundColor: '#e0e0e0',
-    borderRadius: 6,
+  expandBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
-  caption: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#666',
-    textAlign: 'center',
-    paddingHorizontal: 4,
+  counterPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    borderWidth: 1,
+    borderColor: GOLD,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    zIndex: 10,
   },
-  dots: {
+  counterText: {
+    color: GOLD,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  bottomOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 80,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 10,
+    paddingHorizontal: 12,
+    zIndex: 5,
+  },
+  dotsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 10,
-    gap: 6,
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
   },
   dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    height: 6,
+    borderRadius: 3,
   },
   dotActive: {
-    backgroundColor: '#C8102E',
+    width: 16,
+    backgroundColor: GOLD,
   },
   dotInactive: {
-    backgroundColor: '#ccc',
+    width: 6,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  captionText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  arrowBtn: {
+    position: 'absolute',
+    top: '50%' as any,
+    marginTop: -18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  arrowLeft: {
+    left: 8,
+  },
+  arrowRight: {
+    right: 8,
+  },
+});
+
+const lightboxStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  page: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtn: {
+    position: 'absolute',
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  captionContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  captionText: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  counterPill: {
+    position: 'absolute',
+    left: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    zIndex: 20,
+  },
+  counterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  arrowBtn: {
+    position: 'absolute',
+    top: '50%' as any,
+    marginTop: -24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  arrowLeft: {
+    left: 16,
+  },
+  arrowRight: {
+    right: 16,
   },
 });
