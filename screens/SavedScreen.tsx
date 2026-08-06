@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ArticleCard from '../components/ArticleCard';
 import { Article } from '../lib/api';
 import { Fonts } from '../lib/fonts';
@@ -47,41 +48,82 @@ export default function SavedScreen({ navigation }: Props) {
     await removeArticle(id);
   }, []);
 
+  const renderHeader = () => (
+    <View style={styles.masthead}>
+      <Text style={styles.mastheadText}>
+        <Text style={styles.mastheadDaily}>Daily</Text>
+        <Text style={styles.mastheadInsight}>Insight</Text>
+      </Text>
+    </View>
+  );
+
   if (savedArticles.length === 0) {
     return (
-      <View style={[styles.empty, { backgroundColor: colors.background }]}>
-        <Ionicons name="bookmark-outline" size={56} color={colors.textMuted} style={styles.emptyIcon} />
-        <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: Fonts.playfair }]}>
-          No saved articles yet
-        </Text>
-        <Text style={[styles.emptySubtitle, { color: colors.textMuted, fontFamily: Fonts.sourceSerif }]}>
-          Tap the bookmark icon on any article to save it for later.
-        </Text>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+          {renderHeader()}
+          <View style={[styles.empty, { backgroundColor: colors.background }]}>
+            <Ionicons name="bookmark-outline" size={56} color={colors.textMuted} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: Fonts.playfair }]}>
+              No saved articles yet
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted, fontFamily: Fonts.sourceSerif }]}>
+              Tap the bookmark icon on any article to save it for later.
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <FlatList
-      style={[styles.list, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.listContent}
-      data={savedArticles}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <ArticleCard
-          article={savedToArticle(item)}
-          onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
-          showSaveButton
-          saved
-          onSave={() => handleUnsave(item.id)}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        {renderHeader()}
+        <FlatList
+          style={[styles.list, { backgroundColor: colors.background }]}
+          contentContainerStyle={styles.listContent}
+          data={savedArticles}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <ArticleCard
+              article={savedToArticle(item)}
+              onPress={() => navigation.navigate('ArticleDetail', { slug: item.slug })}
+              showSaveButton
+              saved
+              onSave={() => handleUnsave(item.id)}
+            />
+          )}
+          showsVerticalScrollIndicator={false}
         />
-      )}
-      showsVerticalScrollIndicator={false}
-    />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  masthead: {
+    backgroundColor: '#C8102E',
+    paddingBottom: 12,
+    alignItems: 'center',
+  },
+  mastheadText: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+  },
+  mastheadDaily: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+    color: '#FFFFFF',
+  },
+  mastheadInsight: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
+    color: '#D4AF37',
+  },
   list: {
     flex: 1,
   },

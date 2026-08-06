@@ -436,6 +436,14 @@ export default function HomeScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
 
+  // Reset to Latest (index 0) when user taps the Home tab while already on Home
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', () => {
+      setTabIndex(0);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   // Chip row auto-scroll: track each chip's x position and width
   const chipScrollRef = useRef<ScrollView>(null);
   const chipScrollWidth = useRef<number>(0); // visible width of the chip ScrollView
