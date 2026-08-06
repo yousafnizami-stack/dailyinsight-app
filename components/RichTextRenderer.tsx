@@ -316,7 +316,53 @@ function TwitterEmbed({ url }: { url: string }) {
   return (
     <View style={styles.twitterContainer}>
       <WebView
-        source={{ html }}
+        source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
+        style={styles.webview}
+        scrollEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+      />
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C8102E" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function isTikTokUrl(url: string): boolean {
+  const trimmed = url.trim();
+  return /tiktok\.com\/@[\w.]+\/video\/\d+/.test(trimmed) ||
+    /tiktok\.com\/t\/[\w]+/.test(trimmed) ||
+    /vm\.tiktok\.com\/[\w]+/.test(trimmed);
+}
+
+function TikTokEmbed({ url }: { url: string }) {
+  const [loading, setLoading] = useState(true);
+  const embedUrl = url.trim();
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff; display: flex; justify-content: center; }
+  </style>
+</head>
+<body>
+  <blockquote class="tiktok-embed" cite="${embedUrl}" style="max-width:100%;min-width:100%;">
+    <section></section>
+  </blockquote>
+  <script async src="https://www.tiktok.com/embed.js"></script>
+</body>
+</html>`;
+  return (
+    <View style={styles.tiktokContainer}>
+      <WebView
+        source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
         style={styles.webview}
         scrollEnabled={false}
         javaScriptEnabled={true}
@@ -360,6 +406,10 @@ function EmbedBlock({ fields }: { fields: any }) {
 
   if (isTwitterUrl(url)) {
     return <TwitterEmbed url={url} />;
+  }
+
+  if (isTikTokUrl(url)) {
+    return <TikTokEmbed url={url} />;
   }
 
   return (
@@ -497,7 +547,7 @@ function CarouselBlock({ fields }: { fields: any }) {
               </View>
             )}
             {activeCaption ? (
-              <Text style={carouselStyles.captionText} numberOfLines={2}>
+              <Text style={carouselStyles.captionText}>
                 {activeCaption}
               </Text>
             ) : null}
@@ -863,6 +913,14 @@ const styles = StyleSheet.create({
   twitterContainer: {
     width: '100%',
     height: 320,
+    marginVertical: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  tiktokContainer: {
+    width: '100%',
+    height: 700,
     marginVertical: 12,
     borderRadius: 6,
     overflow: 'hidden',
