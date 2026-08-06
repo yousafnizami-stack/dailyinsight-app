@@ -22,13 +22,11 @@ import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
-import CategoryScreen from './screens/CategoryScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
 
 export type RootStackParamList = {
   Tabs: undefined;
   ArticleDetail: { slug: string };
-  Category: { slug: string; title: string };
 };
 
 export type TabParamList = {
@@ -127,11 +125,6 @@ function AppNavigator() {
               </View>
             ),
           }}
-        />
-        <Stack.Screen
-          name="Category"
-          component={CategoryScreen}
-          options={{ title: '' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -12,11 +12,15 @@ interface Props {
   showSaveButton?: boolean;
   saved?: boolean;
   onSave?: () => void;
+  showAccentBorder?: boolean;
+  showTopDivider?: boolean;
 }
 
 export default function HeroCard({
   article,
   onPress,
+  showAccentBorder = true,
+  showTopDivider = false,
 }: Props) {
   const { colors } = useTheme();
 
@@ -26,6 +30,9 @@ export default function HeroCard({
       onPress={onPress}
       android_ripple={{ color: colors.border }}
     >
+      {showTopDivider && (
+        <View style={{ height: 2, backgroundColor: colors.accent }} />
+      )}
       <View style={styles.imageWrapper}>
         {article.featuredImageUrl ? (
           <Image
@@ -39,7 +46,7 @@ export default function HeroCard({
         )}
       </View>
 
-      <View style={[styles.body, { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 }]}>
+      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : { marginTop: 16 }]}>
         {article.category?.name ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
             {article.category.name.toUpperCase()}

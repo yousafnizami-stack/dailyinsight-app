@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TabView } from 'react-native-tab-view';
 import HeroCard from '../components/HeroCard';
 import HorizontalCard from '../components/HorizontalCard';
 import {
@@ -39,8 +40,11 @@ const SECTION_DEFS: { key: string; title: string; fetch: () => Promise<Article[]
   { key: 'tv',            title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
 ];
 
-const CHIPS = SECTION_DEFS.map((s) => ({ key: s.key, label: s.title }));
+const TAB_ROUTES = SECTION_DEFS.map((s) => ({ key: s.key, title: s.title }));
 
+// ---------------------------------------------------------------------------
+// SectionHeader (used only in LatestScene)
+// ---------------------------------------------------------------------------
 function SectionHeader({
   title,
   sectionKey,
@@ -53,11 +57,21 @@ function SectionHeader({
   const { colors } = useTheme();
   return (
     <View
-      style={[styles.sectionHeaderWrapper, sectionKey !== "latest" ? { borderBottomWidth: 2, borderBottomColor: colors.accent } : { borderBottomWidth: 0 }]}
+      style={[
+        latestStyles.sectionHeaderWrapper,
+        sectionKey !== 'latest'
+          ? { borderBottomWidth: 2, borderBottomColor: colors.accent }
+          : { borderBottomWidth: 0 },
+      ]}
       onLayout={(e) => onLayout(sectionKey, e.nativeEvent.layout.y)}
     >
-      {sectionKey !== "latest" ? (
-        <Text style={[styles.sectionHeaderText, { color: colors.sectionHeader, fontFamily: Fonts.playfair }]}>
+      {sectionKey !== 'latest' ? (
+        <Text
+          style={[
+            latestStyles.sectionHeaderText,
+            { color: colors.sectionHeader, fontFamily: Fonts.playfair },
+          ]}
+        >
           {title}
         </Text>
       ) : null}
@@ -65,18 +79,18 @@ function SectionHeader({
   );
 }
 
-export default function HomeScreen({ navigation }: Props) {
+// ---------------------------------------------------------------------------
+// LatestScene — the mixed multi-section feed (tab index 0)
+// ---------------------------------------------------------------------------
+function LatestScene({ navigation }: { navigation: any }) {
   const { colors } = useTheme();
 
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedChip, setSelectedChip] = useState<string>('latest');
 
-  // Ref for the main vertical ScrollView
   const scrollViewRef = useRef<ScrollView>(null);
-  // Map of sectionKey -> Y position within the ScrollView content
   const sectionYPositions = useRef<Record<string, number>>({});
 
   const handleSectionLayout = useCallback((key: string, y: number) => {
@@ -90,9 +104,8 @@ export default function HomeScreen({ navigation }: Props) {
         SECTION_DEFS.map(async (def) => {
           const articles = await def.fetch();
           return { key: def.key, title: def.title, articles };
-        })
+        }),
       );
-      // Skip sections with no articles
       setSections(results.filter((s) => s.articles.length > 0));
     } catch (e: any) {
       setError(e.message ?? 'Failed to load articles');
@@ -113,18 +126,9 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [loadAllSections]);
 
-  const handleChipPress = useCallback((chipKey: string, chipLabel: string) => {
-    if (chipKey === 'latest') {
-      setSelectedChip(chipKey);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      navigation.navigate('Category', { slug: chipKey, title: chipLabel });
-    }
-  }, [navigation]);
-
   if (loading) {
     return (
-      <View style={[styles.centered, { flex: 1, backgroundColor: colors.background }]}>
+      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -132,112 +136,239 @@ export default function HomeScreen({ navigation }: Props) {
 
   if (error && sections.length === 0) {
     return (
-      <View style={[styles.centered, { flex: 1, backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
+        <Text style={[sharedStyles.errorText, { color: colors.textSecondary }]}>{error}</Text>
         <Pressable
-          style={[styles.retryButton, { backgroundColor: colors.accent }]}
+          style={[sharedStyles.retryButton, { backgroundColor: colors.accent }]}
           onPress={() => {
             setLoading(true);
             loadAllSections().finally(() => setLoading(false));
           }}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={sharedStyles.retryButtonText}>Retry</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Masthead — full-bleed crimson wordmark bar */}
-      <View style={styles.masthead}>
-        <Text style={styles.mastheadText}>
-          <Text style={styles.mastheadDaily}>Daily</Text>
-          <Text style={styles.mastheadInsight}>Insight</Text>
-        </Text>
-      </View>
-      {/* Chip row — fixed above scroll content */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={[styles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
-        contentContainerStyle={styles.chipRowContent}
-      >
-        {CHIPS.map((chip) => {
-          const isSelected = selectedChip === chip.key;
-          return (
-            <Pressable
-              key={chip.key}
-              onPress={() => handleChipPress(chip.key, chip.label)}
-              style={[
-                styles.chip,
-                isSelected && styles.chipSelected,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: isSelected ? '#C8102E' : colors.textMuted },
-                ]}
-              >
-                {chip.label.toUpperCase()}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {/* Main content scroll view */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 8 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
+    <ScrollView
+      ref={scrollViewRef}
+      style={{ flex: 1, backgroundColor: colors.background }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingVertical: 8 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+        />
+      }
+    >
+      {sections.map((section) => (
+        <View key={section.key}>
+          <SectionHeader
+            title={section.title}
+            sectionKey={section.key}
+            onLayout={handleSectionLayout}
           />
-        }
-      >
-        {sections.map((section) => (
-          <View key={section.key}>
-            <SectionHeader
-              title={section.title}
-              sectionKey={section.key}
-              onLayout={handleSectionLayout}
-            />
-            {section.articles.map((article, idx) => {
-              if (idx === 0) {
-                return (
-                  <HeroCard
-                    key={article.id}
-                    article={article}
-                    onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
-                    showAccentBorder={section.key !== 'latest'}
-                  />
-                );
-              }
+          {section.articles.map((article, idx) => {
+            if (idx === 0) {
               return (
-                <HorizontalCard
+                <HeroCard
                   key={article.id}
                   article={article}
-                  onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
+                  onPress={() =>
+                    navigation.navigate('ArticleDetail', { slug: article.slug })
+                  }
+                  showAccentBorder={section.key !== 'latest'}
                 />
               );
-            })}
-          </View>
-        ))}
-      </ScrollView>
+            }
+            return (
+              <HorizontalCard
+                key={article.id}
+                article={article}
+                onPress={() =>
+                  navigation.navigate('ArticleDetail', { slug: article.slug })
+                }
+              />
+            );
+          })}
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CategoryScene — repeating hero+3 block, no title, per-tab independent scroll
+// ---------------------------------------------------------------------------
+function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) {
+  const { colors } = useTheme();
+
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchArticlesByCategory(slug, 40)
+      .then((data) => {
+        if (!cancelled) {
+          const displayCount = Math.floor(data.length / 4) * 4;
+          setArticles(data.slice(0, displayCount));
+        }
+      })
+      .catch((e: any) => {
+        if (!cancelled) setError(e.message ?? 'Failed to load articles');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
+        <Text style={[sharedStyles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (articles.length === 0) {
+    return (
+      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
+        <Text style={[sharedStyles.errorText, { color: colors.textSecondary }]}>
+          Not enough stories yet
+        </Text>
+      </View>
+    );
+  }
+
+  const blocks: Article[][] = [];
+  for (let i = 0; i < articles.length; i += 4) {
+    blocks.push(articles.slice(i, i + 4));
+  }
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingVertical: 8 }}
+    >
+      {blocks.map((block, blockIdx) => (
+        <View key={blockIdx}>
+          <HeroCard
+            article={block[0]}
+            onPress={() =>
+              navigation.navigate('ArticleDetail', { slug: block[0].slug })
+            }
+            showTopDivider={true}
+            showAccentBorder={true}
+          />
+          {block.slice(1).map((article) => (
+            <HorizontalCard
+              key={article.id}
+              article={article}
+              onPress={() =>
+                navigation.navigate('ArticleDetail', { slug: article.slug })
+              }
+            />
+          ))}
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HomeScreen — persistent shell: masthead + chip row + TabView
+// ---------------------------------------------------------------------------
+export default function HomeScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const [tabIndex, setTabIndex] = useState(0);
+
+  const renderScene = ({ route }: { route: { key: string; title: string } }) => {
+    if (route.key === 'latest') return <LatestScene navigation={navigation} />;
+    return <CategoryScene slug={route.key} navigation={navigation} />;
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Masthead */}
+        <View style={shellStyles.masthead}>
+          <Text style={shellStyles.mastheadText}>
+            <Text style={shellStyles.mastheadDaily}>Daily</Text>
+            <Text style={shellStyles.mastheadInsight}>Insight</Text>
+          </Text>
+        </View>
+
+        {/* Chip row — drives TabView index */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={[shellStyles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
+          contentContainerStyle={shellStyles.chipRowContent}
+        >
+          {TAB_ROUTES.map((route, chipIndex) => {
+            const isSelected = tabIndex === chipIndex;
+            return (
+              <Pressable
+                key={route.key}
+                onPress={() => setTabIndex(chipIndex)}
+                style={[shellStyles.chip, isSelected && shellStyles.chipSelected]}
+              >
+                <Text
+                  style={[
+                    shellStyles.chipText,
+                    { color: isSelected ? '#C8102E' : colors.textMuted },
+                  ]}
+                >
+                  {route.title.toUpperCase()}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* TabView fills remaining height; default tab bar suppressed */}
+        <TabView
+          navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
+          renderScene={renderScene}
+          onIndexChange={setTabIndex}
+          renderTabBar={() => null}
+          lazy
+          renderLazyPlaceholder={() => (
+            <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
+              <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+          )}
+          style={{ flex: 1 }}
+        />
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+const shellStyles = StyleSheet.create({
   masthead: {
     backgroundColor: '#C8102E',
     paddingBottom: 12,
@@ -256,26 +387,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 32,
     color: '#D4AF37',
-  },
-  centered: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 6,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
   },
   chipRow: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -299,6 +410,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 0.5,
   },
+});
+
+const latestStyles = StyleSheet.create({
   sectionHeaderWrapper: {
     marginHorizontal: 12,
     marginTop: 18,
@@ -310,10 +424,27 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 30,
   },
-  sectionDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 4,
+});
+
+const sharedStyles = StyleSheet.create({
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
