@@ -86,6 +86,11 @@ function extractInstagramShortcode(url: string): string | null {
   return match ? match[1] : null;
 }
 
+/** Return true if the URL is a Twitter/X tweet URL */
+function isTwitterUrl(url: string): boolean {
+  return /(?:twitter\.com|x\.com)\/.+\/status\/\d+/.test(url.trim());
+}
+
 function YouTubeEmbed({ videoId }: { videoId: string }) {
   const [loading, setLoading] = useState(true);
   const webViewRef = useRef<WebView>(null);
@@ -288,6 +293,46 @@ function InstagramEmbed({ shortcode }: { shortcode: string }) {
   );
 }
 
+function TwitterEmbed({ url }: { url: string }) {
+  const [loading, setLoading] = useState(true);
+  const tweetUrl = url.trim();
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff; display: flex; justify-content: center; }
+    .twitter-tweet { min-width: 100% !important; max-width: 100% !important; }
+  </style>
+</head>
+<body>
+  <blockquote class="twitter-tweet">
+    <a href="${tweetUrl}"></a>
+  </blockquote>
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</body>
+</html>`;
+  return (
+    <View style={styles.twitterContainer}>
+      <WebView
+        source={{ html }}
+        style={styles.webview}
+        scrollEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+      />
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C8102E" />
+        </View>
+      )}
+    </View>
+  );
+}
+
 function EmbedBlock({ fields }: { fields: any }) {
   const url: string = fields?.url ?? '';
 
@@ -311,6 +356,10 @@ function EmbedBlock({ fields }: { fields: any }) {
     if (shortcode) {
       return <InstagramEmbed shortcode={shortcode} />;
     }
+  }
+
+  if (isTwitterUrl(url)) {
+    return <TwitterEmbed url={url} />;
   }
 
   return (
@@ -806,6 +855,14 @@ const styles = StyleSheet.create({
   instagramContainer: {
     width: '100%',
     height: 600,
+    marginVertical: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  twitterContainer: {
+    width: '100%',
+    height: 320,
     marginVertical: 12,
     borderRadius: 6,
     overflow: 'hidden',
