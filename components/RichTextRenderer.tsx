@@ -77,9 +77,9 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-/** Extract Instagram post shortcode from an instagram.com/p/... URL */
+/** Extract Instagram post shortcode from an instagram.com/p/..., /reel/..., or /tv/... URL */
 function extractInstagramShortcode(url: string): string | null {
-  const match = url.match(/instagram\.com\/p\/([^/?#]+)/);
+  const match = url.match(/instagram\.com\/(?:p|reel|tv)\/([^/?#]+)/);
   return match ? match[1] : null;
 }
 
