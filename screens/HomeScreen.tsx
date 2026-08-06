@@ -104,8 +104,11 @@ export default function HomeScreen({ navigation }: Props) {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadAllSections();
-    setRefreshing(false);
+    try {
+      await loadAllSections();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadAllSections]);
 
   const handleChipPress = useCallback((chipKey: string) => {
@@ -226,7 +229,6 @@ export default function HomeScreen({ navigation }: Props) {
                 />
               );
             })}
-            <View style={[styles.sectionDivider, { borderBottomColor: colors.border }]} />
           </View>
         ))}
       </ScrollView>
