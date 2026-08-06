@@ -79,14 +79,16 @@ function ChipTabBar({
       onLayout={(e) => { chipScrollWidth.current = e.nativeEvent.layout.width; }}
     >
       {routes.map((route, chipIndex) => {
-        const color = position.interpolate({
-          inputRange,
-          outputRange: inputRange.map((idx) => (idx === chipIndex ? '#C8102E' : colors.textMuted)),
-          extrapolate: 'clamp',
-        });
-        const underlineOpacity = position.interpolate({
+        // Use opacity crossfade instead of color interpolation — opacity runs on the native
+        // driver; color interpolation falls back to the JS thread and lags during gestures.
+        const activeOpacity = position.interpolate({
           inputRange,
           outputRange: inputRange.map((idx) => (idx === chipIndex ? 1 : 0)),
+          extrapolate: 'clamp',
+        });
+        const inactiveOpacity = position.interpolate({
+          inputRange,
+          outputRange: inputRange.map((idx) => (idx === chipIndex ? 0 : 1)),
           extrapolate: 'clamp',
         });
 
@@ -94,8 +96,7 @@ function ChipTabBar({
           <Pressable
             key={route.key}
             onPress={() => {
-              // Snap position immediately so interpolated color+underline update in sync with the tab jump.
-              // position is typed as AnimatedInterpolation but at runtime is the TabView's Animated.Value.
+              // Snap position immediately so interpolated opacity+underline update in sync with the tab jump.
               (position as unknown as Animated.Value).setValue(chipIndex);
               jumpTo(route.key);
               onChipPress(chipIndex);
@@ -108,16 +109,17 @@ function ChipTabBar({
               };
             }}
           >
-            <Animated.Text
-              style={[
-                shellStyles.chipText,
-                { color },
-              ]}
-            >
-              {route.title.toUpperCase()}
-            </Animated.Text>
+            {/* Two text layers at fixed colors, crossfaded via opacity — never interpolate color directly */}
+            <View style={shellStyles.chipTextWrapper}>
+              <Animated.Text style={[shellStyles.chipText, { color: colors.textMuted, opacity: inactiveOpacity }]}>
+                {route.title.toUpperCase()}
+              </Animated.Text>
+              <Animated.Text style={[shellStyles.chipText, shellStyles.chipTextActive, { opacity: activeOpacity }]}>
+                {route.title.toUpperCase()}
+              </Animated.Text>
+            </View>
             <Animated.View
-              style={[shellStyles.chipUnderline, { opacity: underlineOpacity }]}
+              style={[shellStyles.chipUnderline, { opacity: activeOpacity }]}
             />
           </Pressable>
         );
@@ -547,10 +549,20 @@ const shellStyles = StyleSheet.create({
     backgroundColor: '#C8102E',
     marginTop: 8,
   },
+  chipTextWrapper: {
+    position: 'relative',
+  },
   chipText: {
     fontFamily: 'BarlowCondensed_600SemiBold',
     fontSize: 14,
     letterSpacing: 0.5,
+  },
+  chipTextActive: {
+    color: '#C8102E',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
 });
 
