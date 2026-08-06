@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -9,15 +9,17 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TabView } from 'react-native-tab-view';
+import { TabView, NavigationState, SceneRendererProps } from 'react-native-tab-view';
 import HeroCard from '../components/HeroCard';
 import HorizontalCard from '../components/HorizontalCard';
+import SkeletonLoader from '../components/SkeletonLoader';
 import {
   Article,
   fetchLatestArticles,
   fetchArticlesByCategory,
 } from '../lib/api';
 import { Fonts } from '../lib/fonts';
+import { useMarkLatestReady } from '../lib/SplashContext';
 import { useTheme } from '../lib/ThemeContext';
 
 interface Props {
@@ -41,6 +43,85 @@ const SECTION_DEFS: { key: string; title: string; fetch: () => Promise<Article[]
 ];
 
 const TAB_ROUTES = SECTION_DEFS.map((s) => ({ key: s.key, title: s.title }));
+
+// ---------------------------------------------------------------------------
+// ChipTabBar — module-level so it's not recreated on every HomeScreen render.
+// Receives tabBarProps from TabView's renderTabBar plus parent refs/callbacks.
+// ---------------------------------------------------------------------------
+type ChipTabBarProps = SceneRendererProps & {
+  navigationState: NavigationState<{ key: string; title: string }>;
+  chipScrollRef: React.RefObject<ScrollView | null>;
+  chipLayouts: React.MutableRefObject<Array<{ x: number; width: number }>>;
+  chipScrollWidth: React.MutableRefObject<number>;
+  onChipPress: (index: number) => void;
+};
+
+function ChipTabBar({
+  position,
+  navigationState,
+  jumpTo,
+  chipScrollRef,
+  chipLayouts,
+  chipScrollWidth,
+  onChipPress,
+}: ChipTabBarProps) {
+  const { colors } = useTheme();
+  const { routes } = navigationState;
+  const inputRange = routes.map((_, i) => i);
+
+  return (
+    <ScrollView
+      ref={chipScrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={[shellStyles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
+      contentContainerStyle={shellStyles.chipRowContent}
+      onLayout={(e) => { chipScrollWidth.current = e.nativeEvent.layout.width; }}
+    >
+      {routes.map((route, chipIndex) => {
+        const color = position.interpolate({
+          inputRange,
+          outputRange: inputRange.map((idx) => (idx === chipIndex ? '#C8102E' : colors.textMuted)),
+          extrapolate: 'clamp',
+        });
+        const underlineOpacity = position.interpolate({
+          inputRange,
+          outputRange: inputRange.map((idx) => (idx === chipIndex ? 1 : 0)),
+          extrapolate: 'clamp',
+        });
+
+        return (
+          <Pressable
+            key={route.key}
+            onPress={() => {
+              jumpTo(route.key);
+              onChipPress(chipIndex);
+            }}
+            style={shellStyles.chip}
+            onLayout={(e) => {
+              chipLayouts.current[chipIndex] = {
+                x: e.nativeEvent.layout.x,
+                width: e.nativeEvent.layout.width,
+              };
+            }}
+          >
+            <Animated.Text
+              style={[
+                shellStyles.chipText,
+                { color },
+              ]}
+            >
+              {route.title.toUpperCase()}
+            </Animated.Text>
+            <Animated.View
+              style={[shellStyles.chipUnderline, { opacity: underlineOpacity }]}
+            />
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // SectionHeader (used only in LatestScene)
@@ -84,6 +165,7 @@ function SectionHeader({
 // ---------------------------------------------------------------------------
 function LatestScene({ navigation }: { navigation: any }) {
   const { colors } = useTheme();
+  const markLatestReady = useMarkLatestReady();
 
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,11 +188,15 @@ function LatestScene({ navigation }: { navigation: any }) {
           return { key: def.key, title: def.title, articles };
         }),
       );
-      setSections(results.filter((s) => s.articles.length > 0));
+      const filtered = results.filter((s) => s.articles.length > 0);
+      setSections(filtered);
+      markLatestReady();
     } catch (e: any) {
       setError(e.message ?? 'Failed to load articles');
+      // Still mark ready so the splash doesn't hang on error
+      markLatestReady();
     }
-  }, []);
+  }, [markLatestReady]);
 
   useEffect(() => {
     setLoading(true);
@@ -127,11 +213,7 @@ function LatestScene({ navigation }: { navigation: any }) {
   }, [loadAllSections]);
 
   if (loading) {
-    return (
-      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
+    return <SkeletonLoader />;
   }
 
   if (error && sections.length === 0) {
@@ -180,7 +262,14 @@ function LatestScene({ navigation }: { navigation: any }) {
                   key={article.id}
                   article={article}
                   onPress={() =>
-                    navigation.navigate('ArticleDetail', { slug: article.slug })
+                    navigation.navigate('ArticleDetail', {
+                      slug: article.slug,
+                      title: article.title,
+                      featuredImageUrl: article.featuredImageUrl,
+                      categoryName: article.category?.name,
+                      publishedAt: article.publishedAt,
+                      author: article.author,
+                    })
                   }
                   showAccentBorder={section.key !== 'latest'}
                 />
@@ -191,7 +280,14 @@ function LatestScene({ navigation }: { navigation: any }) {
                 key={article.id}
                 article={article}
                 onPress={() =>
-                  navigation.navigate('ArticleDetail', { slug: article.slug })
+                  navigation.navigate('ArticleDetail', {
+                    slug: article.slug,
+                    title: article.title,
+                    featuredImageUrl: article.featuredImageUrl,
+                    categoryName: article.category?.name,
+                    publishedAt: article.publishedAt,
+                    author: article.author,
+                  })
                 }
               />
             );
@@ -234,11 +330,7 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
   }, [slug]);
 
   if (loading) {
-    return (
-      <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
+    return <SkeletonLoader />;
   }
 
   if (error) {
@@ -275,7 +367,14 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
           <HeroCard
             article={block[0]}
             onPress={() =>
-              navigation.navigate('ArticleDetail', { slug: block[0].slug })
+              navigation.navigate('ArticleDetail', {
+                slug: block[0].slug,
+                title: block[0].title,
+                featuredImageUrl: block[0].featuredImageUrl,
+                categoryName: block[0].category?.name,
+                publishedAt: block[0].publishedAt,
+                author: block[0].author,
+              })
             }
             showTopDivider={true}
             showAccentBorder={true}
@@ -285,7 +384,14 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
               key={article.id}
               article={article}
               onPress={() =>
-                navigation.navigate('ArticleDetail', { slug: article.slug })
+                navigation.navigate('ArticleDetail', {
+                  slug: article.slug,
+                  title: article.title,
+                  featuredImageUrl: article.featuredImageUrl,
+                  categoryName: article.category?.name,
+                  publishedAt: article.publishedAt,
+                  author: article.author,
+                })
               }
             />
           ))}
@@ -314,9 +420,6 @@ export default function HomeScreen({ navigation }: Props) {
     const visibleWidth = chipScrollWidth.current;
     if (visibleWidth === 0) return;
 
-    // We don't know current scrollX without an onScroll listener, so always
-    // scroll to a position that centers the chip with padding — safe to call even
-    // if it's already visible (scrollTo with already-current offset is a no-op visually).
     const PADDING = 40;
     const targetX = Math.max(0, layout.x - PADDING);
     chipScrollRef.current.scrollTo({ x: targetX, animated: true });
@@ -326,10 +429,27 @@ export default function HomeScreen({ navigation }: Props) {
     setTabIndex(index);
   }, []);
 
+  const handleChipPress = useCallback((index: number) => {
+    setTabIndex(index);
+  }, []);
+
   const renderScene = ({ route }: { route: { key: string; title: string } }) => {
     if (route.key === 'latest') return <LatestScene navigation={navigation} />;
     return <CategoryScene slug={route.key} navigation={navigation} />;
   };
+
+  const renderTabBar = useCallback(
+    (tabBarProps: SceneRendererProps & { navigationState: NavigationState<{ key: string; title: string }> }) => (
+      <ChipTabBar
+        {...tabBarProps}
+        chipScrollRef={chipScrollRef}
+        chipLayouts={chipLayouts}
+        chipScrollWidth={chipScrollWidth}
+        onChipPress={handleChipPress}
+      />
+    ),
+    [handleChipPress],
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
@@ -342,54 +462,14 @@ export default function HomeScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        {/* Chip row — drives TabView index; auto-scrolls to keep active chip visible */}
-        <ScrollView
-          ref={chipScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={[shellStyles.chipRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
-          contentContainerStyle={shellStyles.chipRowContent}
-          onLayout={(e) => { chipScrollWidth.current = e.nativeEvent.layout.width; }}
-        >
-          {TAB_ROUTES.map((route, chipIndex) => {
-            const isSelected = tabIndex === chipIndex;
-            return (
-              <Pressable
-                key={route.key}
-                onPress={() => setTabIndex(chipIndex)}
-                style={[shellStyles.chip, isSelected && shellStyles.chipSelected]}
-                onLayout={(e) => {
-                  chipLayouts.current[chipIndex] = {
-                    x: e.nativeEvent.layout.x,
-                    width: e.nativeEvent.layout.width,
-                  };
-                }}
-              >
-                <Text
-                  style={[
-                    shellStyles.chipText,
-                    { color: isSelected ? '#C8102E' : colors.textMuted },
-                  ]}
-                >
-                  {route.title.toUpperCase()}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* TabView fills remaining height; default tab bar suppressed */}
+        {/* TabView fills remaining height; chip row is rendered via renderTabBar */}
         <TabView
           navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
           renderScene={renderScene}
           onIndexChange={handleIndexChange}
-          renderTabBar={() => null}
+          renderTabBar={renderTabBar}
           lazy
-          renderLazyPlaceholder={() => (
-            <View style={[sharedStyles.centered, { flex: 1, backgroundColor: colors.background }]}>
-              <ActivityIndicator size="large" color={colors.accent} />
-            </View>
-          )}
+          renderLazyPlaceholder={() => <SkeletonLoader />}
           style={{ flex: 1 }}
         />
       </View>
@@ -430,12 +510,14 @@ const shellStyles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 0,
     marginHorizontal: 2,
   },
-  chipSelected: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#C8102E',
+  chipUnderline: {
+    height: 2,
+    backgroundColor: '#C8102E',
+    marginTop: 8,
   },
   chipText: {
     fontFamily: 'BarlowCondensed_600SemiBold',

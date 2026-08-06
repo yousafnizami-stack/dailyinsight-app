@@ -24,7 +24,16 @@ import {
 } from '../lib/savedArticles';
 
 interface Props {
-  route: { params: { slug: string } };
+  route: {
+    params: {
+      slug: string;
+      title?: string;
+      featuredImageUrl?: string;
+      categoryName?: string;
+      publishedAt?: string;
+      author?: string;
+    };
+  };
   navigation: any;
 }
 
@@ -56,7 +65,16 @@ function formatDate(dateString: string): string {
 }
 
 export default function ArticleDetailScreen({ route, navigation }: Props) {
-  const { slug } = route.params;
+  const {
+    slug,
+    title: previewTitle,
+    featuredImageUrl: previewImage,
+    categoryName: previewCategory,
+    publishedAt: previewDate,
+    author: previewAuthor,
+  } = route.params;
+
+  const hasPreview = Boolean(previewTitle);
   const { colors } = useTheme();
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -152,7 +170,18 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     };
   }, [slug, navigation]);
 
-  if (loading) {
+  // Derived display values: prefer real article data, fall back to preview params
+  const displayTitle = article?.title ?? previewTitle ?? '';
+  const displayImage = article?.featuredImageUrl ?? previewImage;
+  const displayCategory = article?.category?.name ?? previewCategory;
+  const displayDate = article?.publishedAt ?? previewDate;
+  const displayAuthor = article?.author ?? previewAuthor;
+  const displayExcerpt = article?.excerpt;
+
+  const authorLabel = displayAuthor ? (AUTHOR_LABELS[displayAuthor] ?? displayAuthor) : null;
+
+  // Only show full-page loading spinner if no preview data available (e.g. deep links)
+  if (loading && !hasPreview) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -160,7 +189,8 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  if (error || !article) {
+  // Error state — only show if we also have no article and no preview to show
+  if (error && !article && !hasPreview) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>
@@ -176,16 +206,32 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  const authorLabel = article.author ? (AUTHOR_LABELS[article.author] ?? article.author) : null;
+  // If fetch failed but we have preview data, still render what we have
+  if (!loading && !article && !hasPreview) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+          {error ?? 'Article not found.'}
+        </Text>
+        <Pressable
+          style={[styles.backButton, { backgroundColor: colors.accent }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
       style={[styles.scroll, { backgroundColor: colors.background }]}
       showsVerticalScrollIndicator={false}
     >
-      {article.featuredImageUrl ? (
+      {/* Featured image — shown immediately from preview params */}
+      {displayImage ? (
         <Image
-          source={{ uri: article.featuredImageUrl }}
+          source={{ uri: displayImage }}
           style={styles.heroImage}
           contentFit="cover"
           transition={200}
@@ -196,36 +242,47 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 
       <View style={styles.header}>
         {/* Eyebrow: category */}
-        {article.category?.name ? (
+        {displayCategory ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
-            {article.category.name.toUpperCase()}
+            {displayCategory.toUpperCase()}
           </Text>
         ) : null}
 
         {/* H1: headline */}
         <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}>
-          {article.title}
+          {displayTitle}
         </Text>
 
-        {/* Dek: excerpt */}
-        {article.excerpt ? (
+        {/* Dek: excerpt — only available once real article loads */}
+        {displayExcerpt ? (
           <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif }]}>
-            {article.excerpt}
+            {displayExcerpt}
           </Text>
         ) : null}
 
         {/* Byline + date row */}
-        <Text style={[styles.byline, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
-          {authorLabel
-            ? `${authorLabel} · ${formatDate(article.publishedAt)}`
-            : formatDate(article.publishedAt)}
-        </Text>
+        {displayDate ? (
+          <Text style={[styles.byline, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+            {authorLabel
+              ? `${authorLabel} · ${formatDate(displayDate)}`
+              : formatDate(displayDate)}
+          </Text>
+        ) : null}
 
         {/* Horizontal divider */}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
       </View>
 
-      <RichTextRenderer body={article.body} />
+      {/* Body content — show skeleton placeholder while loading, real content when ready */}
+      {loading && hasPreview ? (
+        <View style={styles.bodyPlaceholder}>
+          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
+          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
+          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderMedium, { backgroundColor: colors.border }]} />
+        </View>
+      ) : article ? (
+        <RichTextRenderer body={article.body} />
+      ) : null}
     </ScrollView>
   );
 }
@@ -287,6 +344,20 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginBottom: 4,
+  },
+  bodyPlaceholder: {
+    padding: 16,
+    gap: 12,
+  },
+  bodyPlaceholderLine: {
+    height: 16,
+    borderRadius: 4,
+  },
+  bodyPlaceholderFull: {
+    width: '100%',
+  },
+  bodyPlaceholderMedium: {
+    width: '65%',
   },
   headerRight: {
     flexDirection: 'row',

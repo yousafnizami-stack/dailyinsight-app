@@ -17,20 +17,28 @@ import {
   SourceSerif4_400Regular,
   SourceSerif4_600SemiBold,
 } from '@expo-google-fonts/source-serif-4';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
+import { SplashProvider } from './lib/SplashContext';
 
 // Keep the native splash screen visible until we explicitly hide it
 SplashScreen.preventAutoHideAsync();
 
 export type RootStackParamList = {
   Tabs: undefined;
-  ArticleDetail: { slug: string };
+  ArticleDetail: {
+    slug: string;
+    title?: string;
+    featuredImageUrl?: string;
+    categoryName?: string;
+    publishedAt?: string;
+    author?: string;
+  };
 };
 
 export type TabParamList = {
@@ -145,13 +153,17 @@ export default function App() {
     SourceSerif4_600SemiBold,
   });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      // Hide the native splash screen now that fonts are ready and the app
-      // is about to render — keeps the branded splash visible through cold start
-      await SplashScreen.hideAsync();
+  const [latestReady, setLatestReady] = useState(false);
+
+  const handleLatestReady = useCallback(() => {
+    setLatestReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && latestReady) {
+      SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, latestReady]);
 
   if (!fontsLoaded) {
     return null; // Native splash stays visible while fonts load
@@ -159,9 +171,9 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <SplashProvider onLatestReady={handleLatestReady}>
         <AppNavigator />
-      </View>
+      </SplashProvider>
     </ThemeProvider>
   );
 }

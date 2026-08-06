@@ -32,7 +32,7 @@ export default function HeroCard({
     >
       {/* Top divider — sits immediately above the image, symmetric with bottom accent border */}
       {showTopDivider && (
-        <View style={{ height: 2, backgroundColor: colors.accent }} />
+        <View style={{ height: 2, backgroundColor: colors.accent, marginBottom: 16 }} />
       )}
       <View style={styles.imageWrapper}>
         {article.featuredImageUrl ? (
@@ -47,8 +47,8 @@ export default function HeroCard({
         )}
       </View>
 
-      {/* Bottom accent border — no extra marginTop gap, the border itself is the divider */}
-      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent } : {}]}>
+      {/* Bottom accent border — 16px gap between image and the red body border line */}
+      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : {}]}>
         {article.category?.name ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
             {article.category.name.toUpperCase()}
