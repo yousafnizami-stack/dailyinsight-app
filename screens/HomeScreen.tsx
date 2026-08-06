@@ -53,12 +53,14 @@ function SectionHeader({
   const { colors } = useTheme();
   return (
     <View
-      style={[styles.sectionHeaderWrapper, { borderBottomColor: colors.accent }]}
+      style={[styles.sectionHeaderWrapper, sectionKey !== "latest" ? { borderBottomWidth: 2, borderBottomColor: colors.accent } : { borderBottomWidth: 0 }]}
       onLayout={(e) => onLayout(sectionKey, e.nativeEvent.layout.y)}
     >
-      <Text style={[styles.sectionHeaderText, { color: colors.sectionHeader, fontFamily: Fonts.playfair }]}>
-        {title}
-      </Text>
+      {sectionKey !== "latest" ? (
+        <Text style={[styles.sectionHeaderText, { color: colors.sectionHeader, fontFamily: Fonts.playfair }]}>
+          {title}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -111,17 +113,14 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [loadAllSections]);
 
-  const handleChipPress = useCallback((chipKey: string) => {
-    setSelectedChip(chipKey);
+  const handleChipPress = useCallback((chipKey: string, chipLabel: string) => {
     if (chipKey === 'latest') {
+      setSelectedChip(chipKey);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
-      const y = sectionYPositions.current[chipKey];
-      if (y !== undefined) {
-        scrollViewRef.current?.scrollTo({ y, animated: true });
-      }
+      navigation.navigate('Category', { slug: chipKey, title: chipLabel });
     }
-  }, []);
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -170,7 +169,7 @@ export default function HomeScreen({ navigation }: Props) {
           return (
             <Pressable
               key={chip.key}
-              onPress={() => handleChipPress(chip.key)}
+              onPress={() => handleChipPress(chip.key, chip.label)}
               style={[
                 styles.chip,
                 isSelected && styles.chipSelected,
@@ -218,6 +217,7 @@ export default function HomeScreen({ navigation }: Props) {
                     key={article.id}
                     article={article}
                     onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
+                    showAccentBorder={section.key !== 'latest'}
                   />
                 );
               }
