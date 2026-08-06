@@ -96,8 +96,6 @@ function ChipTabBar({
           <Pressable
             key={route.key}
             onPress={() => {
-              // Snap position immediately so interpolated opacity+underline update in sync with the tab jump.
-              (position as unknown as Animated.Value).setValue(chipIndex);
               jumpTo(route.key);
               onChipPress(chipIndex);
             }}
