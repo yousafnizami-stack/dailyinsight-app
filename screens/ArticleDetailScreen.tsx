@@ -12,6 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RichTextRenderer from '../components/RichTextRenderer';
 import { Article, fetchArticleBySlug } from '../lib/api';
 import { Fonts } from '../lib/fonts';
@@ -103,7 +104,8 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         slug: article.slug,
         publishedAt: article.publishedAt,
         featuredImageUrl: article.featuredImageUrl,
-        category: article.category,
+        categoryName: article.categoryName,
+        categorySlug: article.categorySlug,
       };
       await saveArticle(toSave);
     }
@@ -111,7 +113,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 
   const handleShare = useCallback(async () => {
     if (!article) return;
-    const categorySlug = article.category?.slug ?? '';
+    const categorySlug = article.categorySlug ?? '';
     const articleUrl = `https://www.dailyinsight.co.uk/${categorySlug}/${article.slug}`;
     await Share.share(
       Platform.OS === 'ios'
@@ -119,34 +121,6 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         : { title: article.title, message: `${article.title} ${articleUrl}` }
     );
   }, [article]);
-
-  useEffect(() => {
-    if (!article) return;
-    navigation.setOptions({
-      headerLeft: () => (
-        <Pressable onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </View>
-        </Pressable>
-      ),
-      headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="share-outline" size={20} color="#000" />
-            </View>
-          </Pressable>
-          <View style={{ width: 16 }} />
-          <Pressable onPress={handleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={20} color="#000" />
-            </View>
-          </Pressable>
-        </View>
-      ),
-    });
-  }, [article, saved, handleSave, handleShare, navigation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,12 +142,12 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [slug, navigation]);
+  }, [slug]);
 
   // Derived display values: prefer real article data, fall back to preview params
   const displayTitle = article?.title ?? previewTitle ?? '';
   const displayImage = article?.featuredImageUrl ?? previewImage;
-  const displayCategory = article?.category?.name ?? previewCategory;
+  const displayCategory = article?.categoryName ?? previewCategory;
   const displayDate = article?.publishedAt ?? previewDate;
   const displayAuthor = article?.author ?? previewAuthor;
   const displayExcerpt = article?.excerpt;
@@ -183,111 +157,172 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   // Only show full-page loading spinner if no preview data available (e.g. deep links)
   if (loading && !hasPreview) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+        <View style={styles.customHeader}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.headerButton}
+          >
+            <Ionicons name="chevron-back" size={26} color="#fff" />
+          </Pressable>
+          <View style={styles.headerActions} />
+        </View>
+        <View style={[styles.centered, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Error state — only show if we also have no article and no preview to show
-  if (error && !article && !hasPreview) {
+  if ((error || (!loading && !article)) && !hasPreview) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-          {error ?? 'Article not found.'}
-        </Text>
-        <Pressable
-          style={[styles.backButton, { backgroundColor: colors.accent }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  // If fetch failed but we have preview data, still render what we have
-  if (!loading && !article && !hasPreview) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-          {error ?? 'Article not found.'}
-        </Text>
-        <Pressable
-          style={[styles.backButton, { backgroundColor: colors.accent }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+        <View style={styles.customHeader}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.headerButton}
+          >
+            <Ionicons name="chevron-back" size={26} color="#fff" />
+          </Pressable>
+          <View style={styles.headerActions} />
+        </View>
+        <View style={[styles.centered, { backgroundColor: colors.background }]}>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+            {error ?? 'Article not found.'}
+          </Text>
+          <Pressable
+            style={[styles.backButton, { backgroundColor: colors.accent }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.background }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Featured image — shown immediately from preview params */}
-      {displayImage ? (
-        <Image
-          source={{ uri: displayImage }}
-          style={styles.heroImage}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />
-      )}
-
-      <View style={styles.header}>
-        {/* Eyebrow: category */}
-        {displayCategory ? (
-          <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
-            {displayCategory.toUpperCase()}
-          </Text>
-        ) : null}
-
-        {/* H1: headline */}
-        <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}>
-          {displayTitle}
-        </Text>
-
-        {/* Dek: excerpt — only available once real article loads */}
-        {displayExcerpt ? (
-          <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif }]}>
-            {displayExcerpt}
-          </Text>
-        ) : null}
-
-        {/* Byline + date row */}
-        {displayDate ? (
-          <Text style={[styles.byline, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
-            {authorLabel
-              ? `${authorLabel} · ${formatDate(displayDate)}`
-              : formatDate(displayDate)}
-          </Text>
-        ) : null}
-
-        {/* Horizontal divider */}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+      {/* Custom header — renders immediately, no article dependency for back button */}
+      <View style={styles.customHeader}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerButton}
+        >
+          <Ionicons name="chevron-back" size={26} color="#fff" />
+        </Pressable>
+        <View style={styles.headerActions}>
+          {article && (
+            <Pressable
+              onPress={handleShare}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerButton}
+            >
+              <Ionicons name="share-outline" size={22} color="#fff" />
+            </Pressable>
+          )}
+          {article && (
+            <Pressable
+              onPress={handleSave}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.headerButton, { marginLeft: 8 }]}
+            >
+              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={22} color="#fff" />
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      {/* Body content — show skeleton placeholder while loading, real content when ready */}
-      {loading && hasPreview ? (
-        <View style={styles.bodyPlaceholder}>
-          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
-          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
-          <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderMedium, { backgroundColor: colors.border }]} />
+      <ScrollView
+        style={[styles.scroll, { backgroundColor: colors.background }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Featured image — shown immediately from preview params */}
+        {displayImage ? (
+          <Image
+            source={{ uri: displayImage }}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />
+        )}
+
+        <View style={styles.header}>
+          {/* Eyebrow: category */}
+          {displayCategory ? (
+            <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
+              {displayCategory.toUpperCase()}
+            </Text>
+          ) : null}
+
+          {/* H1: headline */}
+          <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}>
+            {displayTitle}
+          </Text>
+
+          {/* Dek: excerpt — only available once real article loads */}
+          {displayExcerpt ? (
+            <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif }]}>
+              {displayExcerpt}
+            </Text>
+          ) : null}
+
+          {/* Byline + date row */}
+          {displayDate ? (
+            <Text style={[styles.byline, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+              {authorLabel
+                ? `${authorLabel} · ${formatDate(displayDate)}`
+                : formatDate(displayDate)}
+            </Text>
+          ) : null}
+
+          {/* Horizontal divider */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
         </View>
-      ) : article ? (
-        <RichTextRenderer body={article.body} />
-      ) : null}
-    </ScrollView>
+
+        {/* Body content — show skeleton placeholder while loading, real content when ready */}
+        {loading && hasPreview ? (
+          <View style={styles.bodyPlaceholder}>
+            <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
+            <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderFull, { backgroundColor: colors.border }]} />
+            <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderMedium, { backgroundColor: colors.border }]} />
+          </View>
+        ) : article ? (
+          <RichTextRenderer body={article.body} />
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  customHeader: {
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    backgroundColor: '#C8102E',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   scroll: {
     flex: 1,
   },
@@ -358,14 +393,5 @@ const styles = StyleSheet.create({
   },
   bodyPlaceholderMedium: {
     width: '65%',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 22,
-    marginRight: 4,
-  },
-  headerBookmark: {
-    // no additional style needed
   },
 });

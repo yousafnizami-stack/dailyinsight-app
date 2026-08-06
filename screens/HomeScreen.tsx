@@ -266,7 +266,7 @@ function LatestScene({ navigation }: { navigation: any }) {
                       slug: article.slug,
                       title: article.title,
                       featuredImageUrl: article.featuredImageUrl,
-                      categoryName: article.category?.name,
+                      categoryName: article.categoryName,
                       publishedAt: article.publishedAt,
                       author: article.author,
                     })
@@ -284,7 +284,7 @@ function LatestScene({ navigation }: { navigation: any }) {
                     slug: article.slug,
                     title: article.title,
                     featuredImageUrl: article.featuredImageUrl,
-                    categoryName: article.category?.name,
+                    categoryName: article.categoryName,
                     publishedAt: article.publishedAt,
                     author: article.author,
                   })
@@ -371,7 +371,7 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
                 slug: block[0].slug,
                 title: block[0].title,
                 featuredImageUrl: block[0].featuredImageUrl,
-                categoryName: block[0].category?.name,
+                categoryName: block[0].categoryName,
                 publishedAt: block[0].publishedAt,
                 author: block[0].author,
               })
@@ -388,7 +388,7 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
                   slug: article.slug,
                   title: article.title,
                   featuredImageUrl: article.featuredImageUrl,
-                  categoryName: article.category?.name,
+                  categoryName: article.categoryName,
                   publishedAt: article.publishedAt,
                   author: article.author,
                 })

@@ -27,7 +27,8 @@ function savedToArticle(saved: SavedArticle): Article {
     slug: saved.slug,
     publishedAt: saved.publishedAt,
     featuredImageUrl: saved.featuredImageUrl,
-    category: saved.category,
+    categoryName: saved.categoryName,
+    categorySlug: saved.categorySlug,
   };
 }
 

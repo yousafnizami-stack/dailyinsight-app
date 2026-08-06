@@ -49,9 +49,9 @@ export default function HeroCard({
 
       {/* Bottom accent border — 16px gap between image and the red body border line */}
       <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : {}]}>
-        {article.category?.name ? (
+        {article.categoryName ? (
           <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
-            {article.category.name.toUpperCase()}
+            {article.categoryName.toUpperCase()}
           </Text>
         ) : null}
         <Text

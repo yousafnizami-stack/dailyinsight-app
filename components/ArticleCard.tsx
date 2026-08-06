@@ -67,9 +67,9 @@ export default function ArticleCard({
       </View>
 
       <View style={styles.cardBody}>
-        {article.category?.name ? (
+        {article.categoryName ? (
           <Text style={[styles.badgeText, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}>
-            {article.category.name.toUpperCase()}
+            {article.categoryName.toUpperCase()}
           </Text>
         ) : null}
         <Text

@@ -5,7 +5,7 @@ const STORAGE_KEY = 'saved_articles';
 /**
  * Minimal shape stored in AsyncStorage — enough to render an ArticleCard
  * without a network call. Mirrors the fields ArticleCard actually reads from
- * Article: featuredImageUrl, category.name, title, publishedAt — plus slug
+ * Article: featuredImageUrl, categoryName, title, publishedAt — plus slug
  * and id for navigation and deduplication.
  */
 export interface SavedArticle {
@@ -14,10 +14,8 @@ export interface SavedArticle {
   slug: string;
   publishedAt: string;
   featuredImageUrl?: string;
-  category?: {
-    slug: string;
-    name: string;
-  };
+  categoryName?: string;
+  categorySlug?: string;
 }
 
 export async function getSavedArticles(): Promise<SavedArticle[]> {

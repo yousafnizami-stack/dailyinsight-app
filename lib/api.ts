@@ -7,10 +7,11 @@ export interface Article {
   excerpt?: string;
   author?: string;
   publishedAt: string;
-  category?: {
-    slug: string;
-    name: string;
-  };
+  // At depth=0 Payload returns the raw relationship ID string, not the populated object.
+  category?: string;
+  // Scalar fields backfilled on the CMS — available at depth=0.
+  categoryName?: string;
+  categorySlug?: string;
   featuredImageUrl?: string;
   body?: any; // Payload lexical JSON
 }
@@ -35,7 +36,7 @@ export async function fetchArticles(
     'where[status][equals]': 'published',
     sort: '-publishedAt',
     limit: '20',
-    depth: '1',
+    depth: '0',
     page: String(page),
   });
 
@@ -98,7 +99,7 @@ export async function searchArticles(
     'where[status][equals]': 'published',
     sort: '-publishedAt',
     limit: '20',
-    depth: '1',
+    depth: '0',
     page: String(page),
   });
 
@@ -116,7 +117,7 @@ export async function fetchLatestArticles(limit: number = 6): Promise<Article[]>
     'where[status][equals]': 'published',
     sort: '-publishedAt',
     limit: String(limit),
-    depth: '1',
+    depth: '0',
   });
 
   const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
@@ -137,7 +138,7 @@ export async function fetchArticlesByCategory(
     'where[status][equals]': 'published',
     sort: '-publishedAt',
     limit: String(limit),
-    depth: '1',
+    depth: '0',
   });
 
   const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
@@ -152,7 +153,7 @@ export async function fetchArticlesByCategory(
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
   const params = new URLSearchParams({
     'where[slug][equals]': slug,
-    depth: '1',
+    depth: '0',
     limit: '1',
   });
 

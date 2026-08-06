@@ -42,11 +42,11 @@ export default function HorizontalCard({
 
       {/* Text column */}
       <View style={styles.body}>
-        {article.category?.name ? (
+        {article.categoryName ? (
           <Text
             style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}
           >
-            {article.category.name.toUpperCase()}
+            {article.categoryName.toUpperCase()}
           </Text>
         ) : null}
         <Text
