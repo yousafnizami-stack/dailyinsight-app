@@ -319,7 +319,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
             <View style={[styles.bodyPlaceholderLine, styles.bodyPlaceholderMedium, { backgroundColor: colors.border }]} />
           </View>
         ) : article ? (
-          <RichTextRenderer body={article.body} />
+          <RichTextRenderer body={article.body} embeds={article.embeds} />
         ) : null}
       </ScrollView>
     </SafeAreaView>

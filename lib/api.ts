@@ -14,6 +14,13 @@ export interface Article {
   categorySlug?: string;
   featuredImageUrl?: string;
   body?: any; // Payload lexical JSON
+  embeds?: Array<{
+    id?: string;
+    platform?: string;
+    embedHtml: string;
+    caption?: string;
+    insertAfterParagraph?: number;
+  }>;
 }
 
 export interface ArticlesResponse {

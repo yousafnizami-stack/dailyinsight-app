@@ -25,8 +25,17 @@ interface LexicalNode {
   blockType?: string;
 }
 
+interface EmbedItem {
+  id?: string;
+  platform?: string;
+  embedHtml: string;
+  caption?: string;
+  insertAfterParagraph?: number;
+}
+
 interface Props {
   body: any;
+  embeds?: EmbedItem[];
 }
 
 function renderTextNode(node: LexicalNode, index: number, textColor: string) {
@@ -306,6 +315,7 @@ function InstagramEmbed({ shortcode }: { shortcode: string }) {
 
 function TwitterEmbed({ url }: { url: string }) {
   const [loading, setLoading] = useState(true);
+  const [webviewHeight, setWebviewHeight] = useState(320);
   const tweetUrl = url.trim();
   const html = `<!DOCTYPE html>
 <html>
@@ -322,6 +332,18 @@ function TwitterEmbed({ url }: { url: string }) {
     <a href="${tweetUrl}">${tweetUrl}</a>
   </blockquote>
   <script>
+    // Report real rendered height back to RN once the tweet widget finishes loading
+    window.addEventListener("message", function(event) {
+      try {
+        var data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (data && data["twttr.embed"] && data["twttr.embed"].method === "twttr.private.resize") {
+          var h = data["twttr.embed"].params[0].height;
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+            JSON.stringify({ tag: "TW_RESIZE", payload: h })
+          );
+        }
+      } catch(e) {}
+    });
     // Console bridge — forwards errors to RN for diagnosis
     window.onerror = function(msg, src, line, col, err) {
       try {
@@ -347,6 +369,9 @@ function TwitterEmbed({ url }: { url: string }) {
   function handleWebViewMessage(event: WebViewMessageEvent) {
     try {
       const msg = JSON.parse(event.nativeEvent.data) as { tag: string; payload: unknown };
+      if (msg.tag === "TW_RESIZE" && typeof msg.payload === "number" && msg.payload > 0) {
+        setWebviewHeight(msg.payload);
+      }
       console.log(`[TW-DIAG][${msg.tag}]`, JSON.stringify(msg.payload));
     } catch (e) {
       console.log('[TW-DIAG][RAW]', event.nativeEvent.data);
@@ -354,7 +379,7 @@ function TwitterEmbed({ url }: { url: string }) {
   }
 
   return (
-    <View style={styles.twitterContainer}>
+    <View style={[styles.twitterContainer, { height: webviewHeight }]}>
       <WebView
         source={{ html, baseUrl: 'https://www.dailyinsight.co.uk' }}
         style={styles.webview}
@@ -364,6 +389,8 @@ function TwitterEmbed({ url }: { url: string }) {
         onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.log('[TW-DIAG][WEBVIEW_LOAD_ERROR]', JSON.stringify(nativeEvent));
@@ -432,6 +459,35 @@ function TikTokEmbed({ url }: { url: string }) {
       )}
     </View>
   );
+}
+
+function detectEmbedType(html: string): { type: 'youtube' | 'instagram' | 'twitter' | 'tiktok' | 'unknown'; id: string } {
+  // YouTube: iframe src contains youtube.com/embed/ or youtube-nocookie.com/embed/
+  const ytMatch = html.match(/src="[^"]*(?:youtube\.com|youtube-nocookie\.com)\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return { type: 'youtube', id: ytMatch[1] };
+
+  // Instagram: class="instagram-media", extract data-instgrm-permalink
+  if (html.includes('instagram-media')) {
+    const igMatch = html.match(/data-instgrm-permalink="([^"]+)"/);
+    if (igMatch) {
+      const shortcode = extractInstagramShortcode(igMatch[1]);
+      if (shortcode) return { type: 'instagram', id: shortcode };
+    }
+  }
+
+  // Twitter/X: class="twitter-tweet", extract anchor href
+  if (html.includes('twitter-tweet')) {
+    const twMatch = html.match(/href="(https?:\/\/(?:twitter|x)\.com\/[^"]+\/status\/\d+[^"]*)"/);
+    if (twMatch) return { type: 'twitter', id: twMatch[1] };
+  }
+
+  // TikTok: class="tiktok-embed", extract cite attribute
+  if (html.includes('tiktok-embed')) {
+    const ttMatch = html.match(/cite="([^"]+)"/);
+    if (ttMatch) return { type: 'tiktok', id: ttMatch[1] };
+  }
+
+  return { type: 'unknown', id: '' };
 }
 
 function EmbedBlock({ fields }: { fields: any }) {
@@ -852,7 +908,7 @@ function BlockNode({
   return null;
 }
 
-export default function RichTextRenderer({ body }: Props) {
+export default function RichTextRenderer({ body, embeds = [] }: Props) {
   const { colors } = useTheme();
 
   if (!body?.root?.children) {
@@ -861,11 +917,45 @@ export default function RichTextRenderer({ body }: Props) {
 
   const nodes: LexicalNode[] = body.root.children;
 
+  // Build a map of insertAfterParagraph → embed items so we can splice them in efficiently
+  const embedsByPosition = new Map<number, EmbedItem[]>();
+  for (const embed of embeds) {
+    const pos = embed.insertAfterParagraph ?? -1;
+    if (pos < 0) continue;
+    if (!embedsByPosition.has(pos)) {
+      embedsByPosition.set(pos, []);
+    }
+    embedsByPosition.get(pos)!.push(embed);
+  }
+
+  const output: React.ReactNode[] = [];
+
+  nodes.forEach((node, i) => {
+    output.push(<BlockNode key={`node-${i}`} node={node} index={i} colors={colors} />);
+
+    const embedsHere = embedsByPosition.get(i);
+    if (embedsHere) {
+      for (const embed of embedsHere) {
+        const detected = detectEmbedType(embed.embedHtml);
+        const key = `embed-${i}-${embed.id ?? detected.id}`;
+        if (detected.type === 'youtube') {
+          output.push(<YouTubeEmbed key={key} videoId={detected.id} />);
+        } else if (detected.type === 'instagram') {
+          output.push(<InstagramEmbed key={key} shortcode={detected.id} />);
+        } else if (detected.type === 'twitter') {
+          output.push(<TwitterEmbed key={key} url={detected.id} />);
+        } else if (detected.type === 'tiktok') {
+          output.push(<TikTokEmbed key={key} url={detected.id} />);
+        } else {
+          console.warn('[RichTextRenderer] Unrecognised embed HTML, skipping render:', embed.embedHtml.slice(0, 120));
+        }
+      }
+    }
+  });
+
   return (
     <View style={styles.container}>
-      {nodes.map((node, i) => (
-        <BlockNode key={i} node={node} index={i} colors={colors} />
-      ))}
+      {output}
     </View>
   );
 }
