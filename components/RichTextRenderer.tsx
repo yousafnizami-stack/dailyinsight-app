@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
+import { useTextSize } from '../lib/TextSizeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -790,6 +791,7 @@ function BlockNode({
   node,
   index,
   colors,
+  fontScale,
 }: {
   node: LexicalNode;
   index: number;
@@ -801,6 +803,7 @@ function BlockNode({
     accent: string;
     surface: string;
   };
+  fontScale: number;
 }) {
   if (node.type === 'paragraph') {
     const textContent = (node.children ?? [])
@@ -812,7 +815,7 @@ function BlockNode({
     return (
       <Text
         key={index}
-        style={[styles.paragraph, { color: colors.text, fontFamily: Fonts.sourceSerif }]}
+        style={[styles.paragraph, { color: colors.text, fontFamily: Fonts.sourceSerif, fontSize: 17 * fontScale, lineHeight: 28 * fontScale }]}
       >
         {renderInlineChildren(node.children, colors.text)}
       </Text>
@@ -895,7 +898,7 @@ function BlockNode({
         {(node.children ?? []).map((item, i) => (
           <Text
             key={i}
-            style={[styles.listItem, { color: colors.text, fontFamily: Fonts.sourceSerif }]}
+            style={[styles.listItem, { color: colors.text, fontFamily: Fonts.sourceSerif, fontSize: 17 * fontScale, lineHeight: 28 * fontScale }]}
           >
             {isOrdered ? `${i + 1}. ` : '• '}
             {renderInlineChildren(item.children, colors.text)}
@@ -910,6 +913,7 @@ function BlockNode({
 
 export default function RichTextRenderer({ body, embeds = [] }: Props) {
   const { colors } = useTheme();
+  const { fontScale } = useTextSize();
 
   if (!body?.root?.children) {
     return null;
@@ -931,7 +935,7 @@ export default function RichTextRenderer({ body, embeds = [] }: Props) {
   const output: React.ReactNode[] = [];
 
   nodes.forEach((node, i) => {
-    output.push(<BlockNode key={`node-${i}`} node={node} index={i} colors={colors} />);
+    output.push(<BlockNode key={`node-${i}`} node={node} index={i} colors={colors} fontScale={fontScale} />);
 
     const embedsHere = embedsByPosition.get(i);
     if (embedsHere) {

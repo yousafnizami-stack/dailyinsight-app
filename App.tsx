@@ -26,11 +26,14 @@ import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import EditTimelinesScreen from './screens/EditTimelinesScreen';
+import TextSizeScreen from './screens/TextSizeScreen';
+import DisplayScreen from './screens/DisplayScreen';
 import AboutScreen from './screens/AboutScreen';
 import ContactScreen from './screens/ContactScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import CorrectionsPolicyScreen from './screens/CorrectionsPolicyScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
+import { TextSizeProvider } from './lib/TextSizeContext';
 import { SplashProvider } from './lib/SplashContext';
 
 // Keep the native splash screen visible until we explicitly hide it
@@ -47,6 +50,8 @@ export type RootStackParamList = {
     author?: string;
   };
   EditTimelines: undefined;
+  TextSize: undefined;
+  Display: undefined;
   About: undefined;
   Contact: undefined;
   PrivacyPolicy: undefined;
@@ -165,6 +170,16 @@ function AppNavigator() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="TextSize"
+          component={TextSizeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Display"
+          component={DisplayScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="About"
           component={AboutScreen}
           options={{ headerShown: false }}
@@ -218,9 +233,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <SplashProvider onLatestReady={handleLatestReady}>
-          <AppNavigator />
-        </SplashProvider>
+        <TextSizeProvider>
+          <SplashProvider onLatestReady={handleLatestReady}>
+            <AppNavigator />
+          </SplashProvider>
+        </TextSizeProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

@@ -19,6 +19,7 @@ import { Article, fetchArticleBySlug, fetchRelatedArticles } from '../lib/api';
 import { timeAgo } from '../lib/timeAgo';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
+import { useTextSize } from '../lib/TextSizeContext';
 import {
   isSaved,
   removeArticle,
@@ -79,6 +80,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
 
   const hasPreview = Boolean(previewTitle);
   const { colors } = useTheme();
+  const { fontScale } = useTextSize();
 
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -297,13 +299,13 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           ) : null}
 
           {/* H1: headline */}
-          <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}>
+          <Text style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair, fontSize: 30 * fontScale, lineHeight: 38 * fontScale }]}>
             {displayTitle}
           </Text>
 
           {/* Dek: excerpt — only available once real article loads */}
           {displayExcerpt ? (
-            <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif }]}>
+            <Text style={[styles.dek, { color: colors.textSecondary, fontFamily: Fonts.sourceSerif, fontSize: 16 * fontScale, lineHeight: 24 * fontScale }]}>
               {displayExcerpt}
             </Text>
           ) : null}
@@ -368,7 +370,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
                       {rel.categoryName.toUpperCase()}
                     </Text>
                   ) : null}
-                  <Text style={[styles.relatedCardHeadline, { color: colors.text, fontFamily: Fonts.sourceSerif }]} numberOfLines={3}>
+                  <Text style={[styles.relatedCardHeadline, { color: colors.text, fontFamily: Fonts.sourceSerif, fontSize: 14 * fontScale, lineHeight: 19 * fontScale }]} numberOfLines={3}>
                     {rel.title}
                   </Text>
                   <Text style={[styles.relatedCardTimestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>

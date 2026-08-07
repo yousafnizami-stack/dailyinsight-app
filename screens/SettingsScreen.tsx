@@ -14,8 +14,8 @@ import { useTheme } from '../lib/ThemeContext';
 
 const SETTINGS_ROWS = [
   { label: 'Edit Timelines', action: 'EditTimelines' },
-  { label: 'Text size', action: null },
-  { label: 'Display', action: null },
+  { label: 'Text size', action: 'TextSize' },
+  { label: 'Display', action: 'Display' },
 ];
 
 const INFO_ROWS = [
