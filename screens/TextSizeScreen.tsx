@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import {
-  PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Fonts } from '../lib/fonts';
 import { TEXT_SIZE_MAX, TEXT_SIZE_MIN, useTextSize } from '../lib/TextSizeContext';
@@ -21,34 +26,67 @@ interface Props {
 export default function TextSizeScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const { fontScale, setFontScale } = useTextSize();
-  const [trackWidth, setTrackWidth] = useState(1);
-
-  const trackWidthRef = useRef(1);
 
   const toPercent = (scale: number) =>
     (scale - TEXT_SIZE_MIN) / (TEXT_SIZE_MAX - TEXT_SIZE_MIN);
 
-  // Keep this ref up-to-date so the stable panResponder can call the latest logic
-  const updateRef = useRef<(x: number) => void>(() => {});
-  updateRef.current = (locationX: number) => {
-    const w = trackWidthRef.current;
-    if (w <= 0) return;
-    const clamped = Math.max(0, Math.min(1, locationX / w));
-    const raw = TEXT_SIZE_MIN + clamped * (TEXT_SIZE_MAX - TEXT_SIZE_MIN);
+  // Track width as a shared value so it's readable in worklets
+  const trackWidthSV = useSharedValue(1);
+
+  // Normalized position (0..1) on the UI thread — drives all visual updates
+  // Initialized from the persisted fontScale so the thumb starts at the right place
+  const normalizedPos = useSharedValue(toPercent(fontScale));
+
+  // Called once on gesture end to commit to React state + AsyncStorage
+  const commitScale = (pos: number) => {
+    const raw = TEXT_SIZE_MIN + pos * (TEXT_SIZE_MAX - TEXT_SIZE_MIN);
     setFontScale(parseFloat(raw.toFixed(2)));
   };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => updateRef.current(e.nativeEvent.locationX),
-      onPanResponderMove: (e) => updateRef.current(e.nativeEvent.locationX),
-    }),
-  ).current;
+  const gesture = Gesture.Pan()
+    .onBegin((e) => {
+      'worklet';
+      const w = trackWidthSV.value;
+      if (w <= 0) return;
+      normalizedPos.value = Math.max(0, Math.min(1, e.x / w));
+    })
+    .onUpdate((e) => {
+      'worklet';
+      const w = trackWidthSV.value;
+      if (w <= 0) return;
+      normalizedPos.value = Math.max(0, Math.min(1, e.x / w));
+    })
+    .onEnd(() => {
+      'worklet';
+      runOnJS(commitScale)(normalizedPos.value);
+    });
 
-  const percent = toPercent(fontScale);
-  const thumbLeft = percent * trackWidth - THUMB_SIZE / 2;
+  // Thumb position — runs on UI thread, zero JS re-renders during drag
+  const thumbStyle = useAnimatedStyle(() => ({
+    left: normalizedPos.value * trackWidthSV.value - THUMB_SIZE / 2,
+  }));
+
+  // Track fill width — also UI thread
+  const trackFillStyle = useAnimatedStyle(() => ({
+    width: normalizedPos.value * trackWidthSV.value,
+  }));
+
+  // Preview text scales — UI thread, live during drag
+  const previewHeadlineStyle = useAnimatedStyle(() => {
+    const scale = TEXT_SIZE_MIN + normalizedPos.value * (TEXT_SIZE_MAX - TEXT_SIZE_MIN);
+    return {
+      fontSize: 22 * scale,
+      lineHeight: 28 * scale,
+    };
+  });
+
+  const previewBodyStyle = useAnimatedStyle(() => {
+    const scale = TEXT_SIZE_MIN + normalizedPos.value * (TEXT_SIZE_MAX - TEXT_SIZE_MIN);
+    return {
+      fontSize: 17 * scale,
+      lineHeight: 26 * scale,
+    };
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
@@ -85,43 +123,44 @@ export default function TextSizeScreen({ navigation }: Props) {
         <View style={styles.sliderRow}>
           <Text style={[styles.aSmall, { color: colors.textSecondary }]}>A</Text>
 
-          <View
-            style={styles.trackContainer}
-            onLayout={(e) => {
-              const w = e.nativeEvent.layout.width;
-              trackWidthRef.current = w;
-              setTrackWidth(w);
-            }}
-            {...panResponder.panHandlers}
-          >
-            {/* Track background */}
+          <GestureDetector gesture={gesture}>
             <View
-              style={[styles.trackBg, { backgroundColor: colors.border }]}
-            />
-            {/* Filled portion */}
-            <View
-              style={[
-                styles.trackFill,
-                { width: percent * trackWidth, backgroundColor: colors.accent },
-              ]}
-            />
-            {/* Thumb */}
-            <View
-              style={[
-                styles.thumb,
-                {
-                  left: thumbLeft,
-                  backgroundColor: colors.accent,
-                  borderColor: colors.background,
-                },
-              ]}
-            />
-          </View>
+              style={styles.trackContainer}
+              onLayout={(e) => {
+                const w = e.nativeEvent.layout.width;
+                trackWidthSV.value = w;
+                // Recompute thumb position now that we know real track width
+                normalizedPos.value = toPercent(fontScale);
+              }}
+            >
+              {/* Track background */}
+              <View style={[styles.trackBg, { backgroundColor: colors.border }]} />
+              {/* Filled portion — Animated.View, updated on UI thread */}
+              <Animated.View
+                style={[
+                  styles.trackFill,
+                  { backgroundColor: colors.accent },
+                  trackFillStyle,
+                ]}
+              />
+              {/* Thumb — Animated.View, updated on UI thread */}
+              <Animated.View
+                style={[
+                  styles.thumb,
+                  {
+                    backgroundColor: colors.accent,
+                    borderColor: colors.background,
+                  },
+                  thumbStyle,
+                ]}
+              />
+            </View>
+          </GestureDetector>
 
           <Text style={[styles.aLarge, { color: colors.textSecondary }]}>A</Text>
         </View>
 
-        {/* Live preview */}
+        {/* Live preview — Animated.Text so fontSize updates on UI thread during drag */}
         <View style={[styles.preview, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <Text
             style={[
@@ -131,32 +170,24 @@ export default function TextSizeScreen({ navigation }: Props) {
           >
             PREVIEW
           </Text>
-          <Text
+          <Animated.Text
             style={[
               styles.previewHeadline,
-              {
-                color: colors.text,
-                fontFamily: Fonts.playfair,
-                fontSize: 22 * fontScale,
-                lineHeight: 28 * fontScale,
-              },
+              { color: colors.text, fontFamily: Fonts.playfair },
+              previewHeadlineStyle,
             ]}
           >
             Royal family attends ceremony
-          </Text>
-          <Text
+          </Animated.Text>
+          <Animated.Text
             style={[
               styles.previewBody,
-              {
-                color: colors.textSecondary,
-                fontFamily: Fonts.sourceSerif,
-                fontSize: 17 * fontScale,
-                lineHeight: 26 * fontScale,
-              },
+              { color: colors.textSecondary, fontFamily: Fonts.sourceSerif },
+              previewBodyStyle,
             ]}
           >
             Article body text will appear at this size. The quick brown fox jumps over the lazy dog.
-          </Text>
+          </Animated.Text>
         </View>
       </View>
     </SafeAreaView>
