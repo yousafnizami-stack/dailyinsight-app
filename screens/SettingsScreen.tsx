@@ -19,15 +19,16 @@ const SETTINGS_ROWS = [
 ];
 
 const INFO_ROWS = [
-  { label: 'About', url: 'https://www.dailyinsight.co.uk/about' },
-  { label: 'Contact', url: 'https://www.dailyinsight.co.uk/contact' },
-  { label: 'Privacy policy', url: 'https://www.dailyinsight.co.uk/privacy-policy' },
-  { label: 'Corrections policy', url: 'https://www.dailyinsight.co.uk/corrections-policy' },
+  { label: 'About', action: 'About' },
+  { label: 'Contact', action: 'Contact' },
+  { label: 'Privacy policy', action: 'PrivacyPolicy' },
+  { label: 'Corrections policy', action: 'CorrectionsPolicy' },
 ];
 
 interface Props {
   navigation: any;
 }
+
 
 export default function SettingsScreen({ navigation }: Props) {
   const { colors } = useTheme();
@@ -62,7 +63,7 @@ export default function SettingsScreen({ navigation }: Props) {
         {INFO_ROWS.map((row) => (
           <Pressable
             key={row.label}
-            onPress={() => Linking.openURL(row.url!)}
+            onPress={() => navigation.navigate(row.action)}
             style={({ pressed }) => [
               styles.row,
               { borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 },

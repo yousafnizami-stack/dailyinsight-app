@@ -26,6 +26,10 @@ import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import EditTimelinesScreen from './screens/EditTimelinesScreen';
+import AboutScreen from './screens/AboutScreen';
+import ContactScreen from './screens/ContactScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import CorrectionsPolicyScreen from './screens/CorrectionsPolicyScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
 import { SplashProvider } from './lib/SplashContext';
 
@@ -43,6 +47,10 @@ export type RootStackParamList = {
     author?: string;
   };
   EditTimelines: undefined;
+  About: undefined;
+  Contact: undefined;
+  PrivacyPolicy: undefined;
+  CorrectionsPolicy: undefined;
 };
 
 export type TabParamList = {
@@ -154,6 +162,26 @@ function AppNavigator() {
         <Stack.Screen
           name="EditTimelines"
           component={EditTimelinesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="About"
+          component={AboutScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Contact"
+          component={ContactScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CorrectionsPolicy"
+          component={CorrectionsPolicyScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
