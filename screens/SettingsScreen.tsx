@@ -12,6 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
 
+const SETTINGS_ROWS = [
+  { label: 'Edit Timelines', url: null },
+  { label: 'Text size', url: null },
+  { label: 'Display', url: null },
+];
+
 const INFO_ROWS = [
   { label: 'About', url: 'https://www.dailyinsight.co.uk/about' },
   { label: 'Contact', url: 'https://www.dailyinsight.co.uk/contact' },
@@ -19,23 +25,39 @@ const INFO_ROWS = [
   { label: 'Corrections policy', url: 'https://www.dailyinsight.co.uk/corrections-policy' },
 ];
 
-export default function LegalScreen() {
+export default function SettingsScreen() {
   const { colors } = useTheme();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
-      {/* DI wordmark masthead — matches Search/Saved pattern */}
+      {/* DI wordmark masthead */}
       <View style={styles.masthead}>
         <Text style={styles.mastheadDaily}>Daily</Text>
         <Text style={styles.mastheadInsight}>Insight</Text>
       </View>
 
       <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
-        {/* Info rows */}
+        {/* Placeholder settings rows (functionality TBD) */}
+        {SETTINGS_ROWS.map((row) => (
+          <Pressable
+            key={row.label}
+            style={({ pressed }) => [
+              styles.row,
+              { borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 },
+            ]}
+          >
+            <Text style={[styles.rowLabel, { color: colors.text, fontFamily: Fonts.sourceSerif }]}>
+              {row.label}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
+        ))}
+
+        {/* Policy/info rows */}
         {INFO_ROWS.map((row) => (
           <Pressable
             key={row.label}
-            onPress={() => Linking.openURL(row.url)}
+            onPress={() => Linking.openURL(row.url!)}
             style={({ pressed }) => [
               styles.row,
               { borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 },
@@ -118,5 +140,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     gap: 24,
+    paddingBottom: 32,
   },
 });

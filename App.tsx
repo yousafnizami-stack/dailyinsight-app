@@ -23,7 +23,7 @@ import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
-import LegalScreen from './screens/LegalScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
 import { SplashProvider } from './lib/SplashContext';
 
@@ -46,7 +46,7 @@ export type TabParamList = {
   Home: undefined;
   Search: undefined;
   Saved: undefined;
-  About: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -106,14 +106,14 @@ function HomeTabs() {
         }}
       />
       <Tab.Screen
-        name="About"
-        component={LegalScreen}
+        name="Settings"
+        component={SettingsScreen}
         options={{
           headerShown: false,
-          tabBarLabel: 'About',
+          tabBarLabel: 'Settings',
           tabBarIcon: ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
             <Ionicons
-              name={focused ? 'information-circle' : 'information-circle-outline'}
+              name={focused ? 'settings' : 'settings-outline'}
               size={size}
               color={color}
             />
