@@ -157,6 +157,29 @@ export async function fetchArticlesByCategory(
   return data.docs;
 }
 
+export async function fetchRelatedArticles(
+  categorySlug: string,
+  excludeSlug: string,
+  limit: number = 4
+): Promise<Article[]> {
+  const params = new URLSearchParams({
+    'where[category.slug][equals]': categorySlug,
+    'where[status][equals]': 'published',
+    'where[slug][not_equals]': excludeSlug,
+    sort: '-publishedAt',
+    limit: String(limit),
+    depth: '0',
+  });
+
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+
+  const data: ArticlesResponse = await res.json();
+  return data.docs;
+}
+
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
   const params = new URLSearchParams({
     'where[slug][equals]': slug,

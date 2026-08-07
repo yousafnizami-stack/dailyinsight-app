@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { Image } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RichTextRenderer from '../components/RichTextRenderer';
-import { Article, fetchArticleBySlug } from '../lib/api';
+import { Article, fetchArticleBySlug, fetchRelatedArticles } from '../lib/api';
+import { timeAgo } from '../lib/timeAgo';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
 import {
@@ -84,6 +85,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [related, setRelated] = useState<Article[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,6 +133,9 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
       setArticle(data);
       if (data) {
         isSaved(data.id).then(setSaved);
+        if (data.categorySlug) {
+          fetchRelatedArticles(data.categorySlug, data.slug).then(setRelated).catch(() => {});
+        }
       }
     } catch (e: any) {
       setError(e.message ?? 'Failed to load article');
@@ -147,6 +152,11 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           setArticle(data);
           if (data) {
             isSaved(data.id).then(setSaved);
+            if (data.categorySlug) {
+              fetchRelatedArticles(data.categorySlug, data.slug).then((rel) => {
+                if (!cancelled) setRelated(rel);
+              }).catch(() => {});
+            }
           }
         }
       })
@@ -268,7 +278,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
       >
         {/* Featured image — shown immediately from preview params */}
         {displayImage ? (
-          <Image
+          <ExpoImage
             source={{ uri: displayImage }}
             style={styles.heroImage}
             contentFit="cover"
@@ -321,6 +331,54 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         ) : article ? (
           <RichTextRenderer body={article.body} embeds={article.embeds} />
         ) : null}
+
+        {/* You may also like */}
+        {related.length > 0 && (
+          <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
+            <View style={[styles.relatedHeaderRow, { borderBottomColor: colors.accent }]}>
+              <Text style={[styles.relatedHeader, { color: colors.text, fontFamily: Fonts.playfair }]}>
+                You may also like
+              </Text>
+            </View>
+            <View style={styles.relatedGrid}>
+              {related.map((rel) => (
+                <Pressable
+                  key={rel.id}
+                  style={styles.relatedCard}
+                  onPress={() => navigation.push('ArticleDetail', {
+                    slug: rel.slug,
+                    title: rel.title,
+                    featuredImageUrl: rel.featuredImageUrl,
+                    categoryName: rel.categoryName,
+                    publishedAt: rel.publishedAt,
+                  })}
+                >
+                  {rel.featuredImageUrl ? (
+                    <ExpoImage
+                      source={{ uri: rel.featuredImageUrl }}
+                      style={styles.relatedCardImage}
+                      contentFit="cover"
+                      transition={150}
+                    />
+                  ) : (
+                    <View style={[styles.relatedCardImage, { backgroundColor: colors.accent }]} />
+                  )}
+                  {rel.categoryName ? (
+                    <Text style={[styles.relatedCardEyebrow, { color: colors.accent, fontFamily: Fonts.barlowSemiBold }]}>
+                      {rel.categoryName.toUpperCase()}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.relatedCardHeadline, { color: colors.text, fontFamily: Fonts.sourceSerif }]} numberOfLines={3}>
+                    {rel.title}
+                  </Text>
+                  <Text style={[styles.relatedCardTimestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+                    {timeAgo(rel.publishedAt)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -418,5 +476,49 @@ const styles = StyleSheet.create({
   },
   bodyPlaceholderMedium: {
     width: '65%',
+  },
+  relatedSection: {
+    borderTopWidth: 1,
+    marginTop: 24,
+    paddingTop: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 32,
+  },
+  relatedHeaderRow: {
+    borderBottomWidth: 2,
+    paddingBottom: 8,
+    marginBottom: 16,
+  },
+  relatedHeader: {
+    fontSize: 21,
+    lineHeight: 26,
+  },
+  relatedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  relatedCard: {
+    width: '47.5%',
+  },
+  relatedCardImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 2,
+    marginBottom: 6,
+  },
+  relatedCardEyebrow: {
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  relatedCardHeadline: {
+    fontSize: 14,
+    lineHeight: 19,
+    marginBottom: 5,
+  },
+  relatedCardTimestamp: {
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 });
