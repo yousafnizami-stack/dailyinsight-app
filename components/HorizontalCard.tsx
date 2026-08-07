@@ -21,53 +21,54 @@ export default function HorizontalCard({
   const { colors } = useTheme();
 
   return (
-    <Pressable
-      style={[styles.card, { backgroundColor: colors.card }]}
-      onPress={onPress}
-      android_ripple={{ color: colors.border }}
-    >
-      {/* Image column */}
-      <View style={styles.imageWrapper}>
-        {article.featuredImageUrl ? (
-          <Image
-            source={{ uri: article.featuredImageUrl }}
-            style={styles.image}
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.image, { backgroundColor: colors.accent }]} />
-        )}
-      </View>
+    <View style={[styles.cardWrapper, { backgroundColor: colors.card }]}>
+      <Pressable
+        style={styles.card}
+        onPress={onPress}
+        android_ripple={{ color: colors.border }}
+      >
+        {/* Image column */}
+        <View style={styles.imageWrapper}>
+          {article.featuredImageUrl ? (
+            <Image
+              source={{ uri: article.featuredImageUrl }}
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={[styles.image, { backgroundColor: colors.accent }]} />
+          )}
+        </View>
 
-      {/* Text column */}
-      <View style={styles.body}>
-        {article.categoryName ? (
+        {/* Text column */}
+        <View style={styles.body}>
+          {article.categoryName ? (
+            <Text
+              style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}
+            >
+              {article.categoryName.toUpperCase()}
+            </Text>
+          ) : null}
           <Text
-            style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlow }]}
+            style={[styles.headline, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
+            numberOfLines={2}
           >
-            {article.categoryName.toUpperCase()}
+            {article.title}
           </Text>
-        ) : null}
-        <Text
-          style={[styles.headline, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
-          numberOfLines={2}
-        >
-          {article.title}
-        </Text>
-        <Text
-          style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}
-        >
-          {timeAgo(article.publishedAt)}
-        </Text>
-      </View>
-    </Pressable>
+          <Text
+            style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}
+          >
+            {timeAgo(article.publishedAt)}
+          </Text>
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
+  cardWrapper: {
     marginHorizontal: 12,
     marginVertical: 4,
     borderRadius: 4,
@@ -77,6 +78,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  card: {
+    flexDirection: 'row',
   },
   imageWrapper: {
     position: 'relative',

@@ -25,51 +25,53 @@ export default function HeroCard({
   const { colors } = useTheme();
 
   return (
-    <Pressable
-      style={[styles.card, { backgroundColor: colors.card }]}
-      onPress={onPress}
-      android_ripple={{ color: colors.border }}
-    >
-      {/* Top divider — sits immediately above the image, symmetric with bottom accent border */}
-      {showTopDivider && (
-        <View style={{ height: 2, backgroundColor: colors.accent, marginBottom: 16 }} />
-      )}
-      <View style={styles.imageWrapper}>
-        {article.featuredImageUrl ? (
-          <Image
-            source={{ uri: article.featuredImageUrl }}
-            style={styles.image}
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.image, { backgroundColor: colors.accent }]} />
+    <View style={[styles.cardWrapper, { backgroundColor: colors.card }]}>
+      <Pressable
+        style={styles.card}
+        onPress={onPress}
+        android_ripple={{ color: colors.border }}
+      >
+        {/* Top divider — sits immediately above the image, symmetric with bottom accent border */}
+        {showTopDivider && (
+          <View style={{ height: 2, backgroundColor: colors.accent, marginBottom: 16 }} />
         )}
-      </View>
+        <View style={styles.imageWrapper}>
+          {article.featuredImageUrl ? (
+            <Image
+              source={{ uri: article.featuredImageUrl }}
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={[styles.image, { backgroundColor: colors.accent }]} />
+          )}
+        </View>
 
-      {/* Bottom accent border — 16px gap between image and the red body border line */}
-      <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : {}]}>
-        {article.categoryName ? (
-          <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
-            {article.categoryName.toUpperCase()}
+        {/* Bottom accent border — 16px gap between image and the red body border line */}
+        <View style={[styles.body, showAccentBorder ? { borderTopWidth: 2, borderTopColor: colors.accent, marginTop: 16 } : {}]}>
+          {article.categoryName ? (
+            <Text style={[styles.eyebrow, { color: colors.eyebrow, fontFamily: Fonts.barlowSemiBold }]}>
+              {article.categoryName.toUpperCase()}
+            </Text>
+          ) : null}
+          <Text
+            style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}
+            numberOfLines={3}
+          >
+            {article.title}
           </Text>
-        ) : null}
-        <Text
-          style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}
-          numberOfLines={3}
-        >
-          {article.title}
-        </Text>
-        <Text style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
-          {timeAgo(article.publishedAt)}
-        </Text>
-      </View>
-    </Pressable>
+          <Text style={[styles.timestamp, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
+            {timeAgo(article.publishedAt)}
+          </Text>
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  cardWrapper: {
     marginHorizontal: 12,
     marginVertical: 6,
     borderRadius: 4,
@@ -80,6 +82,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  card: {},
   imageWrapper: {
     position: 'relative',
   },
