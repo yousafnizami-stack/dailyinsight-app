@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
   Pressable,
@@ -15,6 +15,7 @@ const CATEGORIES = [
   {
     name: 'Royals',
     icon: 'crown' as const,
+    iconFamily: 'MaterialCommunityIcons' as const,
     description:
       'The definitive source for British Royal Family news. From official engagements and state occasions to the personal stories behind the Crown.',
   },
@@ -156,7 +157,11 @@ export default function AboutScreen({ navigation }: Props) {
                 key={cat.name}
                 style={[styles.categoryRow, { borderColor: colors.border, backgroundColor: colors.card }]}
               >
-                <Ionicons name={cat.icon} size={24} color="#C8102E" style={styles.categoryIcon} />
+                {cat.iconFamily === 'MaterialCommunityIcons' ? (
+                  <MaterialCommunityIcons name={cat.icon} size={24} color="#C8102E" style={styles.categoryIcon} />
+                ) : (
+                  <Ionicons name={cat.icon} size={24} color="#C8102E" style={styles.categoryIcon} />
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.categoryName, { color: colors.text }]}>{cat.name}</Text>
                   <Text style={[styles.categoryDesc, { color: colors.textMuted }]}>
