@@ -166,7 +166,13 @@ function SectionHeader({
 // ---------------------------------------------------------------------------
 // LatestScene — the mixed multi-section feed (tab index 0)
 // ---------------------------------------------------------------------------
-function LatestScene({ navigation }: { navigation: any }) {
+function LatestScene({
+  navigation,
+  scrollRef,
+}: {
+  navigation: any;
+  scrollRef?: React.RefObject<ScrollView | null>;
+}) {
   const { colors } = useTheme();
   const markLatestReady = useMarkLatestReady();
 
@@ -175,7 +181,6 @@ function LatestScene({ navigation }: { navigation: any }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const scrollViewRef = useRef<ScrollView>(null);
   const sectionYPositions = useRef<Record<string, number>>({});
 
   const handleSectionLayout = useCallback((key: string, y: number) => {
@@ -238,7 +243,7 @@ function LatestScene({ navigation }: { navigation: any }) {
 
   return (
     <ScrollView
-      ref={scrollViewRef}
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
@@ -304,7 +309,15 @@ function LatestScene({ navigation }: { navigation: any }) {
 // ---------------------------------------------------------------------------
 // CategoryScene — repeating hero+3 block, no title, per-tab independent scroll
 // ---------------------------------------------------------------------------
-function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) {
+function CategoryScene({
+  slug,
+  navigation,
+  scrollRef,
+}: {
+  slug: string;
+  navigation: any;
+  scrollRef?: React.RefObject<ScrollView | null>;
+}) {
   const { colors } = useTheme();
 
   const [articles, setArticles] = useState<Article[]>([]);
@@ -378,6 +391,7 @@ function CategoryScene({ slug, navigation }: { slug: string; navigation: any }) 
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
@@ -444,13 +458,28 @@ export default function HomeScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation]);
 
+  // One ScrollView ref per tab — populated as scenes mount, used to reset scroll on switch
+  const sceneScrollRefs = useRef<Record<string, React.RefObject<ScrollView | null>>>(
+    Object.fromEntries(TAB_ROUTES.map((r) => [r.key, React.createRef<ScrollView>()]))
+  );
+
+  // Track previous tab so we can reset its scroll when leaving
+  const prevTabIndexRef = useRef(0);
+
   // Chip row auto-scroll: track each chip's x position and width
   const chipScrollRef = useRef<ScrollView>(null);
   const chipScrollWidth = useRef<number>(0); // visible width of the chip ScrollView
   const chipLayouts = useRef<Array<{ x: number; width: number }>>([]);
 
-  // Whenever tabIndex changes (tap or swipe), scroll the chip row to keep active chip visible
+  // Whenever tabIndex changes (tap or swipe): reset PREVIOUS tab scroll to top, scroll chip row
   useEffect(() => {
+    const prevKey = TAB_ROUTES[prevTabIndexRef.current]?.key;
+    if (prevKey && prevTabIndexRef.current !== tabIndex) {
+      // Instant, invisible reset — user is looking at a different scene
+      sceneScrollRefs.current[prevKey]?.current?.scrollTo({ y: 0, animated: false });
+    }
+    prevTabIndexRef.current = tabIndex;
+
     const layout = chipLayouts.current[tabIndex];
     if (!layout || !chipScrollRef.current) return;
     const visibleWidth = chipScrollWidth.current;
@@ -470,8 +499,9 @@ export default function HomeScreen({ navigation }: Props) {
   }, []);
 
   const renderScene = ({ route }: { route: { key: string; title: string } }) => {
-    if (route.key === 'latest') return <LatestScene navigation={navigation} />;
-    return <CategoryScene slug={route.key} navigation={navigation} />;
+    const scrollRef = sceneScrollRefs.current[route.key];
+    if (route.key === 'latest') return <LatestScene navigation={navigation} scrollRef={scrollRef} />;
+    return <CategoryScene slug={route.key} navigation={navigation} scrollRef={scrollRef} />;
   };
 
   const renderTabBar = useCallback(
