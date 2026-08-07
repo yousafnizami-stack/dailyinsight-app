@@ -6,10 +6,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from 'react-native-draggable-flatlist';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Fonts } from '../lib/fonts';
 import { DEFAULT_TAB_KEYS, loadTabOrder, saveTabOrder } from '../lib/tabOrder';
@@ -25,42 +28,160 @@ const LABEL_MAP: Record<string, string> = {
   tv: 'TV',
 };
 
+const ROW_HEIGHT = 54; // paddingVertical 16*2 + fontSize 16 + border 1 + ~5 line height
+
 interface Props {
   navigation: any;
 }
+
+// ---------------------------------------------------------------------------
+// DraggableRow
+// ---------------------------------------------------------------------------
+interface DraggableRowProps {
+  item: string;
+  index: number;
+  count: number;
+  draggedIndex: Animated.SharedValue<number>;
+  dragOffsetY: Animated.SharedValue<number>;
+  colors: ReturnType<typeof useTheme>['colors'];
+  onDragStart: (index: number) => void;
+  onDragEnd: (from: number, to: number) => void;
+}
+
+function DraggableRow({
+  item,
+  index,
+  count,
+  draggedIndex,
+  dragOffsetY,
+  colors,
+  onDragStart,
+  onDragEnd,
+}: DraggableRowProps) {
+  const longPressActivated = useSharedValue(false);
+
+  const gesture = Gesture.Pan()
+    .activateAfterLongPress(350)
+    .onStart(() => {
+      'worklet';
+      longPressActivated.value = true;
+      draggedIndex.value = index;
+      dragOffsetY.value = 0;
+      runOnJS(onDragStart)(index);
+    })
+    .onUpdate((e) => {
+      'worklet';
+      if (!longPressActivated.value) return;
+      dragOffsetY.value = e.translationY;
+    })
+    .onEnd(() => {
+      'worklet';
+      if (!longPressActivated.value) return;
+      const to = Math.min(
+        count - 1,
+        Math.max(0, Math.round((index * ROW_HEIGHT + dragOffsetY.value) / ROW_HEIGHT)),
+      );
+      runOnJS(onDragEnd)(index, to);
+      draggedIndex.value = -1;
+      dragOffsetY.value = 0;
+      longPressActivated.value = false;
+    })
+    .onFinalize(() => {
+      'worklet';
+      longPressActivated.value = false;
+    });
+
+  const animStyle = useAnimatedStyle(() => {
+    const isDragged = draggedIndex.value === index;
+    if (isDragged) {
+      return {
+        transform: [{ translateY: dragOffsetY.value }],
+        zIndex: 999,
+        elevation: 8,
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
+      };
+    }
+
+    // Shift other rows to make room for the dragged item
+    if (draggedIndex.value < 0) {
+      return { transform: [{ translateY: withSpring(0, SPRING) }] };
+    }
+
+    const currentY = index * ROW_HEIGHT;
+    const draggedOriginalY = draggedIndex.value * ROW_HEIGHT;
+    const draggedCurrentY = draggedOriginalY + dragOffsetY.value;
+
+    // Where the dragged item "would" land
+    const targetIndex = Math.min(
+      count - 1,
+      Math.max(0, Math.round(draggedCurrentY / ROW_HEIGHT)),
+    );
+
+    let shift = 0;
+    if (draggedIndex.value < index && index <= targetIndex) {
+      // Dragged item moved past this row from above → shift this row up
+      shift = -ROW_HEIGHT;
+    } else if (draggedIndex.value > index && index >= targetIndex) {
+      // Dragged item moved past this row from below → shift this row down
+      shift = ROW_HEIGHT;
+    }
+
+    return { transform: [{ translateY: withSpring(shift, SPRING) }] };
+  });
+
+  const bgStyle = useAnimatedStyle(() => {
+    const isDragged = draggedIndex.value === index;
+    return {
+      backgroundColor: isDragged ? colors.surface : colors.card,
+    };
+  });
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View style={[styles.row, { borderBottomColor: colors.border }, animStyle, bgStyle]}>
+        <Text style={[styles.rowLabel, { color: colors.text, fontFamily: Fonts.sourceSerif }]}>
+          {LABEL_MAP[item] ?? item}
+        </Text>
+        <Ionicons name="menu" size={22} color={colors.textMuted} />
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+const SPRING = { damping: 20, stiffness: 200, mass: 0.5 };
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 export default function EditTimelinesScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const [data, setData] = useState<string[]>([...DEFAULT_TAB_KEYS]);
 
+  // Shared values for gesture coordination — one pair for the whole list
+  const draggedIndex = useSharedValue(-1);
+  const dragOffsetY = useSharedValue(0);
+
   useEffect(() => {
     loadTabOrder().then(setData);
   }, []);
 
-  const handleDragEnd = useCallback(({ data: newData }: { data: string[] }) => {
-    setData(newData);
-    saveTabOrder(newData);
+  const handleDragStart = useCallback((_index: number) => {
+    // Could add haptic here
   }, []);
 
-  const renderItem = useCallback(({ item, drag, isActive }: RenderItemParams<string>) => (
-    <ScaleDecorator>
-      <Pressable
-        onLongPress={drag}
-        style={[
-          styles.row,
-          {
-            backgroundColor: isActive ? colors.surface : colors.card,
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
-        <Text style={[styles.rowLabel, { color: colors.text, fontFamily: Fonts.sourceSerif }]}>
-          {LABEL_MAP[item] ?? item}
-        </Text>
-        <Ionicons name="menu" size={22} color={colors.textMuted} />
-      </Pressable>
-    </ScaleDecorator>
-  ), [colors]);
+  const handleDragEnd = useCallback((from: number, to: number) => {
+    if (from === to) return;
+    setData((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      saveTabOrder(next);
+      return next;
+    });
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
@@ -85,15 +206,25 @@ export default function EditTimelinesScreen({ navigation }: Props) {
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Text style={[styles.instruction, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
-          Drag to reorder how tabs appear across the app.
+          Hold and drag to reorder how tabs appear across the app.
         </Text>
 
-        <DraggableFlatList
-          data={data}
-          onDragEnd={handleDragEnd}
-          keyExtractor={(item) => item}
-          renderItem={renderItem}
-        />
+        {/* Plain View — only 7 items, no FlatList needed */}
+        <View>
+          {data.map((item, index) => (
+            <DraggableRow
+              key={item}
+              item={item}
+              index={index}
+              count={data.length}
+              draggedIndex={draggedIndex}
+              dragOffsetY={dragOffsetY}
+              colors={colors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            />
+          ))}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -135,12 +266,13 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   row: {
+    height: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
+    backgroundColor: 'transparent',
   },
   rowLabel: {
     fontSize: 16,
