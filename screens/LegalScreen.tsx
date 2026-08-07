@@ -12,10 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
 
-interface Props {
-  navigation: any;
-}
-
 const INFO_ROWS = [
   { label: 'About', url: 'https://www.dailyinsight.co.uk/about' },
   { label: 'Contact', url: 'https://www.dailyinsight.co.uk/contact' },
@@ -23,21 +19,20 @@ const INFO_ROWS = [
   { label: 'Corrections policy', url: 'https://www.dailyinsight.co.uk/corrections-policy' },
 ];
 
-export default function LegalScreen({ navigation }: Props) {
+export default function LegalScreen() {
   const { colors } = useTheme();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
-      {/* Custom header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={8} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
-        </Pressable>
+      {/* DI wordmark masthead — matches Search/Saved pattern */}
+      <View style={styles.masthead}>
+        <Text style={styles.mastheadDaily}>Daily</Text>
+        <Text style={styles.mastheadInsight}>Insight</Text>
       </View>
 
       <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
         {/* Info rows */}
-        {INFO_ROWS.map((row, index) => (
+        {INFO_ROWS.map((row) => (
           <Pressable
             key={row.label}
             onPress={() => Linking.openURL(row.url)}
@@ -79,15 +74,22 @@ export default function LegalScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 44,
+  masthead: {
     backgroundColor: '#C8102E',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
   },
-  backButton: {
-    padding: 4,
+  mastheadDaily: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 28,
+    color: '#ffffff',
+  },
+  mastheadInsight: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 28,
+    color: '#D4AF37',
   },
   scroll: {
     flex: 1,

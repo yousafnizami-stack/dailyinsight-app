@@ -54,13 +54,6 @@ export default function SavedScreen({ navigation }: Props) {
         <Text style={styles.mastheadDaily}>Daily</Text>
         <Text style={styles.mastheadInsight}>Insight</Text>
       </Text>
-      <Pressable
-        onPress={() => navigation.navigate('Legal')}
-        hitSlop={8}
-        style={styles.infoButton}
-      >
-        <Ionicons name="information-circle-outline" size={22} color="#FFFFFF" />
-      </Pressable>
     </View>
   );
 
@@ -117,11 +110,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     alignItems: 'center',
     position: 'relative',
-  },
-  infoButton: {
-    position: 'absolute',
-    right: 16,
-    bottom: 14,
   },
   mastheadText: {
     fontFamily: 'PlayfairDisplay_700Bold',

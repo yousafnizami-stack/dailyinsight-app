@@ -40,13 +40,13 @@ export type RootStackParamList = {
     publishedAt?: string;
     author?: string;
   };
-  Legal: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Search: undefined;
   Saved: undefined;
+  About: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +105,21 @@ function HomeTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name="About"
+        component={LegalScreen}
+        options={{
+          headerShown: false,
+          tabBarLabel: 'About',
+          tabBarIcon: ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
+            <Ionicons
+              name={focused ? 'information-circle' : 'information-circle-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -131,11 +146,6 @@ function AppNavigator() {
         <Stack.Screen
           name="ArticleDetail"
           component={ArticleDetailScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Legal"
-          component={LegalScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
