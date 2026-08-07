@@ -606,6 +606,8 @@ const shellStyles = StyleSheet.create({
   chipRowContent: {
     paddingHorizontal: 8,
     paddingVertical: 0,
+    flexGrow: 1,
+    justifyContent: 'center' as const,
   },
   chip: {
     paddingHorizontal: 12,
