@@ -23,6 +23,7 @@ import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
+import LegalScreen from './screens/LegalScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
 import { SplashProvider } from './lib/SplashContext';
 
@@ -39,6 +40,7 @@ export type RootStackParamList = {
     publishedAt?: string;
     author?: string;
   };
+  Legal: undefined;
 };
 
 export type TabParamList = {
@@ -129,6 +131,11 @@ function AppNavigator() {
         <Stack.Screen
           name="ArticleDetail"
           component={ArticleDetailScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Legal"
+          component={LegalScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

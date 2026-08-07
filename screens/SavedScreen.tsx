@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ArticleCard from '../components/ArticleCard';
 import { Article } from '../lib/api';
@@ -54,6 +54,13 @@ export default function SavedScreen({ navigation }: Props) {
         <Text style={styles.mastheadDaily}>Daily</Text>
         <Text style={styles.mastheadInsight}>Insight</Text>
       </Text>
+      <Pressable
+        onPress={() => navigation.navigate('Legal')}
+        hitSlop={8}
+        style={styles.infoButton}
+      >
+        <Ionicons name="information-circle-outline" size={22} color="#FFFFFF" />
+      </Pressable>
     </View>
   );
 
@@ -109,6 +116,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#C8102E',
     paddingBottom: 12,
     alignItems: 'center',
+    position: 'relative',
+  },
+  infoButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 14,
   },
   mastheadText: {
     fontFamily: 'PlayfairDisplay_700Bold',
