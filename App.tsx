@@ -19,6 +19,7 @@ import {
 } from '@expo-google-fonts/source-serif-4';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
@@ -187,10 +188,12 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <SplashProvider onLatestReady={handleLatestReady}>
-        <AppNavigator />
-      </SplashProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <SplashProvider onLatestReady={handleLatestReady}>
+          <AppNavigator />
+        </SplashProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
