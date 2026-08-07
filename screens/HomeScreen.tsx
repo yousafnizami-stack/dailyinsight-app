@@ -20,6 +20,7 @@ import {
 } from '../lib/api';
 import { Fonts } from '../lib/fonts';
 import { useMarkLatestReady } from '../lib/SplashContext';
+import { loadTabOrder } from '../lib/tabOrder';
 import { useTheme } from '../lib/ThemeContext';
 
 interface Props {
@@ -32,17 +33,26 @@ interface Section {
   articles: Article[];
 }
 
-const SECTION_DEFS: { key: string; title: string; fetch: () => Promise<Article[]> }[] = [
-  { key: 'latest',        title: 'Latest',        fetch: () => fetchLatestArticles(6) },
-  { key: 'royals',        title: 'Royals',        fetch: () => fetchArticlesByCategory('royals', 6) },
-  { key: 'celebrity',     title: 'Celebrity',     fetch: () => fetchArticlesByCategory('celebrity', 6) },
-  { key: 'entertainment', title: 'Entertainment', fetch: () => fetchArticlesByCategory('entertainment', 6) },
-  { key: 'music',         title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
-  { key: 'film',          title: 'Film',          fetch: () => fetchArticlesByCategory('film', 6) },
-  { key: 'tv',            title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
-];
+const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Article[]> }> = {
+  latest:        { title: 'Latest',        fetch: () => fetchLatestArticles(6) },
+  royals:        { title: 'Royals',        fetch: () => fetchArticlesByCategory('royals', 6) },
+  celebrity:     { title: 'Celebrity',     fetch: () => fetchArticlesByCategory('celebrity', 6) },
+  entertainment: { title: 'Entertainment', fetch: () => fetchArticlesByCategory('entertainment', 6) },
+  music:         { title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
+  film:          { title: 'Film',          fetch: () => fetchArticlesByCategory('film', 6) },
+  tv:            { title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
+};
 
-const TAB_ROUTES = SECTION_DEFS.map((s) => ({ key: s.key, title: s.title }));
+const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'entertainment', 'music', 'film', 'tv'];
+
+function buildRoutes(keys: string[]) {
+  return keys
+    .filter((k) => ALL_SECTION_DEFS[k])
+    .map((k) => ({ key: k, title: ALL_SECTION_DEFS[k].title }));
+}
+
+// Initial routes using default order (replaced after AsyncStorage loads)
+const INITIAL_TAB_ROUTES = buildRoutes(DEFAULT_KEYS);
 
 // ---------------------------------------------------------------------------
 // ChipTabBar — module-level so it's not recreated on every HomeScreen render.
@@ -191,9 +201,9 @@ function LatestScene({
     setError(null);
     try {
       const results = await Promise.all(
-        SECTION_DEFS.map(async (def) => {
+        Object.entries(ALL_SECTION_DEFS).map(async ([key, def]) => {
           const articles = await def.fetch();
-          return { key: def.key, title: def.title, articles };
+          return { key, title: def.title, articles };
         }),
       );
       const filtered = results.filter((s) => s.articles.length > 0);
@@ -449,8 +459,23 @@ function CategoryScene({
 export default function HomeScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
+  const [tabRoutes, setTabRoutes] = useState(INITIAL_TAB_ROUTES);
 
-  // Reset to Latest (index 0) when user taps the Home tab while already on Home
+  // Load persisted tab order on mount and whenever the screen is focused
+  // (so changes from EditTimelines are reflected immediately on back-navigation)
+  useEffect(() => {
+    const refresh = () => {
+      loadTabOrder().then((keys) => {
+        setTabRoutes(buildRoutes(keys));
+        setTabIndex(0); // reset to first tab whenever order changes
+      });
+    };
+    refresh();
+    const unsubscribeFocus = navigation.addListener('focus', refresh);
+    return unsubscribeFocus;
+  }, [navigation]);
+
+  // Reset to first tab (index 0) when user taps the Home tab while already on Home
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabPress', () => {
       setTabIndex(0);
@@ -458,10 +483,18 @@ export default function HomeScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation]);
 
-  // One ScrollView ref per tab — populated as scenes mount, used to reset scroll on switch
+  // One ScrollView ref per tab — rebuilt whenever route order changes
   const sceneScrollRefs = useRef<Record<string, React.RefObject<ScrollView | null>>>(
-    Object.fromEntries(TAB_ROUTES.map((r) => [r.key, React.createRef<ScrollView>()]))
+    Object.fromEntries(INITIAL_TAB_ROUTES.map((r) => [r.key, React.createRef<ScrollView>()]))
   );
+  useEffect(() => {
+    // Ensure all current route keys have a ref
+    tabRoutes.forEach((r) => {
+      if (!sceneScrollRefs.current[r.key]) {
+        sceneScrollRefs.current[r.key] = React.createRef<ScrollView>();
+      }
+    });
+  }, [tabRoutes]);
 
   // Track previous tab so we can reset its scroll when leaving
   const prevTabIndexRef = useRef(0);
@@ -473,7 +506,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   // Whenever tabIndex changes (tap or swipe): reset PREVIOUS tab scroll to top, scroll chip row
   useEffect(() => {
-    const prevKey = TAB_ROUTES[prevTabIndexRef.current]?.key;
+    const prevKey = tabRoutes[prevTabIndexRef.current]?.key;
     if (prevKey && prevTabIndexRef.current !== tabIndex) {
       // Instant, invisible reset — user is looking at a different scene
       sceneScrollRefs.current[prevKey]?.current?.scrollTo({ y: 0, animated: false });
@@ -530,7 +563,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         {/* TabView fills remaining height; chip row is rendered via renderTabBar */}
         <TabView
-          navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
+          navigationState={{ index: tabIndex, routes: tabRoutes }}
           renderScene={renderScene}
           onIndexChange={handleIndexChange}
           renderTabBar={renderTabBar}

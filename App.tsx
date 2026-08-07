@@ -24,6 +24,7 @@ import SearchScreen from './screens/SearchScreen';
 import SavedScreen from './screens/SavedScreen';
 import ArticleDetailScreen from './screens/ArticleDetailScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import EditTimelinesScreen from './screens/EditTimelinesScreen';
 import { ThemeProvider, useTheme } from './lib/ThemeContext';
 import { SplashProvider } from './lib/SplashContext';
 
@@ -40,6 +41,7 @@ export type RootStackParamList = {
     publishedAt?: string;
     author?: string;
   };
+  EditTimelines: undefined;
 };
 
 export type TabParamList = {
@@ -146,6 +148,11 @@ function AppNavigator() {
         <Stack.Screen
           name="ArticleDetail"
           component={ArticleDetailScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditTimelines"
+          component={EditTimelinesScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

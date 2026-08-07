@@ -13,9 +13,9 @@ import { Fonts } from '../lib/fonts';
 import { useTheme } from '../lib/ThemeContext';
 
 const SETTINGS_ROWS = [
-  { label: 'Edit Timelines', url: null },
-  { label: 'Text size', url: null },
-  { label: 'Display', url: null },
+  { label: 'Edit Timelines', action: 'EditTimelines' },
+  { label: 'Text size', action: null },
+  { label: 'Display', action: null },
 ];
 
 const INFO_ROWS = [
@@ -25,7 +25,11 @@ const INFO_ROWS = [
   { label: 'Corrections policy', url: 'https://www.dailyinsight.co.uk/corrections-policy' },
 ];
 
-export default function SettingsScreen() {
+interface Props {
+  navigation: any;
+}
+
+export default function SettingsScreen({ navigation }: Props) {
   const { colors } = useTheme();
 
   return (
@@ -37,10 +41,11 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
-        {/* Placeholder settings rows (functionality TBD) */}
+        {/* Settings rows */}
         {SETTINGS_ROWS.map((row) => (
           <Pressable
             key={row.label}
+            onPress={row.action ? () => navigation.navigate(row.action!) : undefined}
             style={({ pressed }) => [
               styles.row,
               { borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 },
