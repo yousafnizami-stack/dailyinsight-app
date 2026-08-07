@@ -364,6 +364,14 @@ function TwitterEmbed({ url }: { url: string }) {
         onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.log('[TW-DIAG][WEBVIEW_LOAD_ERROR]', JSON.stringify(nativeEvent));
+        }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.log('[TW-DIAG][WEBVIEW_HTTP_ERROR]', nativeEvent.statusCode, nativeEvent.url);
+        }}
       />
       {loading && (
         <View style={styles.loadingOverlay}>
