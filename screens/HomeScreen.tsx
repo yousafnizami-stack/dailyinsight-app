@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -458,6 +459,7 @@ function CategoryScene({
 // ---------------------------------------------------------------------------
 export default function HomeScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const [tabIndex, setTabIndex] = useState(0);
   const [tabRoutes, setTabRoutes] = useState(INITIAL_TAB_ROUTES);
 
@@ -570,6 +572,7 @@ export default function HomeScreen({ navigation }: Props) {
           lazy
           renderLazyPlaceholder={() => <SkeletonLoader />}
           style={{ flex: 1 }}
+          initialLayout={{ width: screenWidth }}
         />
       </View>
     </SafeAreaView>
