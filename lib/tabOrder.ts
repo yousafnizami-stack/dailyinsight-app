@@ -6,11 +6,11 @@ export const DEFAULT_TAB_KEYS = [
   'latest',
   'royals',
   'celebrity',
+  'fashion',
   'entertainment',
-  'music',
   'film',
   'tv',
-  'fashion',
+  'music',
 ] as const;
 
 export type TabKey = typeof DEFAULT_TAB_KEYS[number];

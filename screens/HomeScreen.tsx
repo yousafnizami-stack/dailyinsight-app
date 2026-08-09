@@ -45,7 +45,7 @@ const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Art
   fashion:       { title: 'Fashion',       fetch: () => fetchArticlesByCategory('fashion', 6) },
 };
 
-const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'entertainment', 'music', 'film', 'tv', 'fashion'];
+const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'fashion', 'entertainment', 'film', 'tv', 'music'];
 
 function buildRoutes(keys: string[]) {
   return keys

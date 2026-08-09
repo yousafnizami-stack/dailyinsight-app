@@ -184,6 +184,12 @@ export default function EditTimelinesScreen({ navigation }: Props) {
     });
   }, []);
 
+  const handleReset = useCallback(() => {
+    const defaults = [...DEFAULT_TAB_KEYS];
+    setData(defaults);
+    saveTabOrder(defaults);
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
       {/* Header */}
@@ -209,8 +215,15 @@ export default function EditTimelinesScreen({ navigation }: Props) {
         <Text style={[styles.instruction, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
           Hold and drag to reorder how tabs appear across the app.
         </Text>
+        <Pressable
+          onPress={handleReset}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.resetButton}
+        >
+          <Text style={[styles.resetButtonText, { color: colors.accent }]}>Reset to default order</Text>
+        </Pressable>
 
-        {/* Plain View — only 7 items, no FlatList needed */}
+        {/* Plain View — only 8 items, no FlatList needed */}
         <View>
           {data.map((item, index) => (
             <DraggableRow
@@ -264,7 +277,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 4,
+  },
+  resetButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  resetButtonText: {
+    fontFamily: 'BarlowCondensed_600SemiBold',
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
   row: {
     height: ROW_HEIGHT,
