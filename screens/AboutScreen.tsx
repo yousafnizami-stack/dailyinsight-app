@@ -49,6 +49,12 @@ const CATEGORIES = [
     description:
       'The broader entertainment landscape — from award shows and red carpets to viral moments and cultural conversations.',
   },
+  {
+    name: 'Fashion',
+    icon: 'shirt-outline' as const,
+    description:
+      'Style, beauty, and trends — from catwalk to high street, covering the looks and brands that define British fashion culture.',
+  },
 ];
 
 const EDITORIAL_PILLARS = [

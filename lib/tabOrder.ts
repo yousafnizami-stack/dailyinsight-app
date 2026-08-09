@@ -10,6 +10,7 @@ export const DEFAULT_TAB_KEYS = [
   'music',
   'film',
   'tv',
+  'fashion',
 ] as const;
 
 export type TabKey = typeof DEFAULT_TAB_KEYS[number];

@@ -26,6 +26,7 @@ const LABEL_MAP: Record<string, string> = {
   music: 'Music',
   film: 'Film',
   tv: 'TV',
+  fashion: 'Fashion',
 };
 
 const ROW_HEIGHT = 54; // paddingVertical 16*2 + fontSize 16 + border 1 + ~5 line height

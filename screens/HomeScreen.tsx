@@ -42,9 +42,10 @@ const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Art
   music:         { title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
   film:          { title: 'Film',          fetch: () => fetchArticlesByCategory('film', 6) },
   tv:            { title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
+  fashion:       { title: 'Fashion',       fetch: () => fetchArticlesByCategory('fashion', 6) },
 };
 
-const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'entertainment', 'music', 'film', 'tv'];
+const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'entertainment', 'music', 'film', 'tv', 'fashion'];
 
 function buildRoutes(keys: string[]) {
   return keys
