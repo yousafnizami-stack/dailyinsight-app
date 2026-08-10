@@ -240,7 +240,7 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
         incognito={true}
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
-        androidLayerType="hardware"
+        androidLayerType="software"
         onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
