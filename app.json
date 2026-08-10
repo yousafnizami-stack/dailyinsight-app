@@ -12,9 +12,12 @@
       "backgroundColor": "#C8102E"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "backgroundColor": "#C8102E",
-      "bundleIdentifier": "com.anonymous.dailyinsight-app"
+      "bundleIdentifier": "com.dailyinsight.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "backgroundColor": "#C8102E",
@@ -25,7 +28,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.dailyinsightapp"
+      "package": "com.dailyinsight.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +36,11 @@
     "plugins": [
       "expo-font"
     ],
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "eas": {
+        "projectId": "4fc04ccb-441d-400f-856b-b9c3f07b56d4"
+      }
+    }
   }
 }
