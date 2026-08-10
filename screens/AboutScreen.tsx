@@ -51,7 +51,7 @@ const CATEGORIES = [
   },
   {
     name: 'Fashion',
-    icon: 'shirt-outline' as const,
+    icon: 'shirt' as const,
     description:
       'Style, beauty, and trends — from catwalk to high street, covering the looks and brands that define British fashion culture.',
   },
