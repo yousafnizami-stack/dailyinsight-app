@@ -642,27 +642,27 @@ function CarouselBlock({ fields }: { fields: any }) {
           </View>
         )}
 
-        {/* Bottom overlay with dots + caption */}
-        {(total > 1 || activeCaption) && (
-          <View style={carouselStyles.bottomOverlay}>
-            {total > 1 && (
-              <View style={carouselStyles.dotsRow}>
-                {images.map((_: any, i: number) => (
-                  <View
-                    key={i}
-                    style={[
-                      carouselStyles.dot,
-                      i === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
-                    ]}
-                  />
-                ))}
-              </View>
-            )}
-            {activeCaption ? (
-              <Text style={carouselStyles.captionText}>
-                {activeCaption}
-              </Text>
-            ) : null}
+        {/* Caption overlay — grows upward from bottom, independent of dots */}
+        {activeCaption ? (
+          <View style={carouselStyles.captionOverlay}>
+            <Text style={carouselStyles.captionText}>
+              {activeCaption}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Dot pagination — absolutely anchored at fixed bottom position, never shifts with caption */}
+        {total > 1 && (
+          <View style={carouselStyles.dotsRow}>
+            {images.map((_: any, i: number) => (
+              <View
+                key={i}
+                style={[
+                  carouselStyles.dot,
+                  i === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
+                ]}
+              />
+            ))}
           </View>
         )}
 
@@ -1141,25 +1141,27 @@ const carouselStyles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  bottomOverlay: {
+  captionOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: 80,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingBottom: 10,
+    paddingTop: 6,
+    paddingBottom: 30,
     paddingHorizontal: 12,
     zIndex: 5,
   },
   dotsRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 10,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 5,
-    marginBottom: 4,
+    zIndex: 6,
   },
   dot: {
     height: 6,
