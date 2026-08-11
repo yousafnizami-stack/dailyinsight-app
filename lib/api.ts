@@ -195,3 +195,46 @@ export async function fetchArticleBySlug(slug: string): Promise<Article | null> 
   const data: ArticlesResponse = await res.json();
   return data.docs[0] ?? null;
 }
+
+export interface HoroscopeSign {
+  sign: string;
+  reading: string;
+  love: number;
+  career: number;
+  luckyColour: string;
+  luckyNumber: number;
+  luckyDay: string;
+}
+
+export interface HoroscopeData {
+  date: string;
+  signs: HoroscopeSign[];
+  isFallback?: boolean;
+}
+
+export async function fetchHoroscope(): Promise<HoroscopeData | null> {
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+  const BASE = 'https://admin.dailyinsight.co.uk/api/horoscopes';
+  try {
+    // Try today first
+    const res = await fetch(`${BASE}?where[date][equals]=${dateStr}&limit=1`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.docs && data.docs.length > 0) {
+        return { ...data.docs[0], isFallback: false };
+      }
+    }
+    // Fallback to most recent
+    const fallbackRes = await fetch(`${BASE}?sort=-date&limit=1`, { cache: 'no-store' });
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData.docs && fallbackData.docs.length > 0) {
+        return { ...fallbackData.docs[0], isFallback: true };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

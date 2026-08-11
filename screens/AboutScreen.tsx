@@ -55,6 +55,12 @@ const CATEGORIES = [
     description:
       'Style, beauty, and trends — from catwalk to high street, covering the looks and brands that define British fashion culture.',
   },
+  {
+    name: 'Horoscopes',
+    icon: 'sparkles' as const,
+    description:
+      'Daily star signs for all 12 zodiac signs — love ratings, career ratings, and your lucky colour, number, and day.',
+  },
 ];
 
 const EDITORIAL_PILLARS = [

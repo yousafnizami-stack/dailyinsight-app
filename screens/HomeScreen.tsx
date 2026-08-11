@@ -19,6 +19,7 @@ import {
   fetchLatestArticles,
   fetchArticlesByCategory,
 } from '../lib/api';
+import { HoroscopeScene } from './HoroscopeScreen';
 import { Fonts } from '../lib/fonts';
 import { useMarkLatestReady } from '../lib/SplashContext';
 import { loadTabOrder } from '../lib/tabOrder';
@@ -43,9 +44,10 @@ const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Art
   film:          { title: 'Film',          fetch: () => fetchArticlesByCategory('film', 6) },
   tv:            { title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
   music:         { title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
+  horoscopes:    { title: 'Horoscopes',    fetch: async () => [] },
 };
 
-const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'fashion', 'entertainment', 'film', 'tv', 'music'];
+const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'fashion', 'entertainment', 'film', 'tv', 'music', 'horoscopes'];
 
 function buildRoutes(keys: string[]) {
   return keys
@@ -537,6 +539,7 @@ export default function HomeScreen({ navigation }: Props) {
   const renderScene = ({ route }: { route: { key: string; title: string } }) => {
     const scrollRef = sceneScrollRefs.current[route.key];
     if (route.key === 'latest') return <LatestScene navigation={navigation} scrollRef={scrollRef} />;
+    if (route.key === 'horoscopes') return <HoroscopeScene scrollRef={scrollRef} />;
     return <CategoryScene slug={route.key} navigation={navigation} scrollRef={scrollRef} />;
   };
 
