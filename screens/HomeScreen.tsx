@@ -38,11 +38,11 @@ const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Art
   latest:        { title: 'Latest',        fetch: () => fetchLatestArticles(6) },
   royals:        { title: 'Royals',        fetch: () => fetchArticlesByCategory('royals', 6) },
   celebrity:     { title: 'Celebrity',     fetch: () => fetchArticlesByCategory('celebrity', 6) },
+  fashion:       { title: 'Fashion',       fetch: () => fetchArticlesByCategory('fashion', 6) },
   entertainment: { title: 'Entertainment', fetch: () => fetchArticlesByCategory('entertainment', 6) },
-  music:         { title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
   film:          { title: 'Film',          fetch: () => fetchArticlesByCategory('film', 6) },
   tv:            { title: 'TV',            fetch: () => fetchArticlesByCategory('tv', 6) },
-  fashion:       { title: 'Fashion',       fetch: () => fetchArticlesByCategory('fashion', 6) },
+  music:         { title: 'Music',         fetch: () => fetchArticlesByCategory('music', 6) },
 };
 
 const DEFAULT_KEYS = ['latest', 'royals', 'celebrity', 'fashion', 'entertainment', 'film', 'tv', 'music'];
