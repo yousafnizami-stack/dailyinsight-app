@@ -318,8 +318,9 @@ export function HoroscopeScene({
   );
   const currentZodiac = ZODIAC_SIGNS.find((z) => z.key === selectedSign);
 
-  const fallbackDateFormatted = horoscope.date
+  const readingDateFormatted = horoscope.date
     ? new Date(horoscope.date + 'T12:00:00Z').toLocaleDateString('en-GB', {
+        weekday: 'long',
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -333,23 +334,29 @@ export function HoroscopeScene({
       contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Fallback notice */}
-      {horoscope.isFallback && (
-        <View
-          style={{
-            backgroundColor: 'rgba(245,158,11,0.15)',
-            borderLeftWidth: 3,
-            borderLeftColor: '#F59E0B',
-            margin: 16,
-            padding: 12,
-            borderRadius: 6,
-          }}
-        >
+      {/* Date / fallback notice — always shown, amber styling when fallback */}
+      <View
+        style={{
+          backgroundColor: horoscope.isFallback
+            ? 'rgba(245,158,11,0.15)'
+            : 'rgba(200,16,46,0.08)',
+          borderLeftWidth: 3,
+          borderLeftColor: horoscope.isFallback ? '#F59E0B' : '#C8102E',
+          margin: 16,
+          padding: 12,
+          borderRadius: 6,
+        }}
+      >
+        {horoscope.isFallback ? (
           <Text style={{ color: '#F59E0B', fontSize: 13 }}>
-            Showing {fallbackDateFormatted}'s reading — today's will be along shortly
+            Showing {readingDateFormatted}'s reading — today's will be along shortly
           </Text>
-        </View>
-      )}
+        ) : (
+          <Text style={{ color: '#C8102E', fontSize: 13, fontWeight: '600' }}>
+            {readingDateFormatted}
+          </Text>
+        )}
+      </View>
 
       {/* Sign selector grid (4 columns x 3 rows) */}
       <View
@@ -508,7 +515,7 @@ export function HoroscopeScene({
                 }}
               >
                 <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>
-                  🎨 {currentSignData.luckyColour}
+                  Lucky Colour: {currentSignData.luckyColour}
                 </Text>
               </View>
               <View
@@ -522,7 +529,7 @@ export function HoroscopeScene({
                 }}
               >
                 <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>
-                  🔢 {currentSignData.luckyNumber}
+                  Lucky Number: {currentSignData.luckyNumber}
                 </Text>
               </View>
               <View
@@ -536,7 +543,7 @@ export function HoroscopeScene({
                 }}
               >
                 <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>
-                  📅 {currentSignData.luckyDay}
+                  Lucky Day: {currentSignData.luckyDay}
                 </Text>
               </View>
             </View>
