@@ -37,8 +37,11 @@ export default function SettingsScreen({ navigation }: Props) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
       {/* DI wordmark masthead */}
       <View style={styles.masthead}>
-        <Text style={styles.mastheadDaily}>Daily</Text>
-        <Text style={styles.mastheadInsight}>Insight</Text>
+        <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
+          <Text style={{ fontFamily: Fonts.playfair, fontSize: 20, fontWeight: '700' }}>
+            <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
+          </Text>
+        </View>
       </View>
 
       <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
@@ -95,6 +98,13 @@ export default function SettingsScreen({ navigation }: Props) {
           >
             <Ionicons name="logo-twitter" size={28} color={colors.text} />
           </Pressable>
+          <Pressable
+            onPress={() => Linking.openURL('https://www.instagram.com/dailyinsightuk/')}
+            hitSlop={8}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Ionicons name="logo-instagram" size={28} color={colors.text} />
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -104,8 +114,7 @@ export default function SettingsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   masthead: {
     backgroundColor: '#C8102E',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
   },

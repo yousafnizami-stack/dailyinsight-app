@@ -466,6 +466,13 @@ export default function HomeScreen({ navigation }: Props) {
   const [tabIndex, setTabIndex] = useState(0);
   const [tabRoutes, setTabRoutes] = useState(INITIAL_TAB_ROUTES);
 
+  // Refs that always mirror the latest state values so event-handler closures
+  // (which only close over their deps) can read current values without re-subscribing.
+  const tabIndexRef = useRef(tabIndex);
+  tabIndexRef.current = tabIndex;
+  const tabRoutesRef = useRef(tabRoutes);
+  tabRoutesRef.current = tabRoutes;
+
   // Load persisted tab order on mount and whenever the screen is focused
   // (so changes from EditTimelines are reflected immediately on back-navigation)
   useEffect(() => {
@@ -480,10 +487,18 @@ export default function HomeScreen({ navigation }: Props) {
     return unsubscribeFocus;
   }, [navigation]);
 
-  // Reset to first tab (index 0) when user taps the Home tab while already on Home
+  // When already on the Latest tab (index 0) and the home button is pressed again,
+  // scroll Latest back to the top. Otherwise just navigate to Latest.
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabPress', () => {
-      setTabIndex(0);
+      if (tabIndexRef.current === 0) {
+        const key = tabRoutesRef.current[0]?.key;
+        if (key) {
+          sceneScrollRefs.current[key]?.current?.scrollTo({ y: 0, animated: true });
+        }
+      } else {
+        setTabIndex(0);
+      }
     });
     return unsubscribe;
   }, [navigation]);
