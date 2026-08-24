@@ -216,14 +216,6 @@ export default function EditTimelinesScreen({ navigation }: Props) {
         <Text style={[styles.instruction, { color: colors.textMuted, fontFamily: Fonts.barlowSemiBold }]}>
           Hold and drag to reorder how tabs appear across the app.
         </Text>
-        <Pressable
-          onPress={handleReset}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.resetButton}
-        >
-          <Text style={[styles.resetButtonText, { color: colors.accent }]}>Reset to default order</Text>
-        </Pressable>
-
         {/* Plain View — only 8 items, no FlatList needed */}
         <View>
           {data.map((item, index) => (
@@ -240,6 +232,16 @@ export default function EditTimelinesScreen({ navigation }: Props) {
             />
           ))}
         </View>
+        <Pressable
+          onPress={handleReset}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{ marginHorizontal: 20, marginTop: 16, marginBottom: 8 }}
+        >
+          <View style={{ borderWidth: 1.5, borderColor: '#C8102E', borderRadius: 8, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <Ionicons name="refresh-outline" size={16} color="#C8102E" />
+            <Text style={{ color: '#C8102E', fontFamily: Fonts.barlowSemiBold, fontSize: 13, letterSpacing: 0.3 }}>Reset to default order</Text>
+          </View>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -279,16 +281,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 4,
-  },
-  resetButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  resetButtonText: {
-    fontFamily: 'BarlowCondensed_600SemiBold',
-    fontSize: 13,
-    letterSpacing: 0.5,
   },
   row: {
     height: ROW_HEIGHT,
