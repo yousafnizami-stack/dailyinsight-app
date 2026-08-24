@@ -37,11 +37,10 @@ export default function SettingsScreen({ navigation }: Props) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
       {/* DI wordmark masthead */}
       <View style={styles.masthead}>
-        <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
-          <Text style={{ fontFamily: Fonts.playfair, fontSize: 22, fontWeight: '700' }}>
-            <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
-          </Text>
-        </View>
+        <Text style={styles.mastheadText}>
+          <Text style={styles.mastheadDaily}>Daily</Text>
+          <Text style={styles.mastheadInsight}>Insight</Text>
+        </Text>
       </View>
 
       <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
@@ -113,19 +112,22 @@ export default function SettingsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   masthead: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#C8102E',
+    paddingBottom: 12,
+    alignItems: 'center',
+  },
+  mastheadText: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 32,
   },
   mastheadDaily: {
     fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 28,
+    fontSize: 32,
     color: '#ffffff',
   },
   mastheadInsight: {
     fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 28,
+    fontSize: 32,
     color: '#D4AF37',
   },
   scroll: {
