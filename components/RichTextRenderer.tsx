@@ -560,7 +560,6 @@ function CarouselBlock({ fields }: { fields: any }) {
   function scrollCarouselTo(index: number) {
     const clamped = Math.max(0, Math.min(total - 1, index));
     carouselScrollRef.current?.scrollTo({ x: clamped * carouselWidth, animated: true });
-    setActiveIndex(clamped);
   }
 
   function openLightbox() {
