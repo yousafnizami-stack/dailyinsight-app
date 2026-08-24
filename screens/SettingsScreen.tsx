@@ -38,7 +38,7 @@ export default function SettingsScreen({ navigation }: Props) {
       {/* DI wordmark masthead */}
       <View style={styles.masthead}>
         <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
-          <Text style={{ fontFamily: Fonts.playfair, fontSize: 32, fontWeight: '700' }}>
+          <Text style={{ fontFamily: Fonts.playfair, fontSize: 22, fontWeight: '700' }}>
             <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
           </Text>
         </View>
@@ -113,9 +113,10 @@ export default function SettingsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   masthead: {
-    backgroundColor: '#C8102E',
-    paddingBottom: 12,
+    height: 44,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#C8102E',
   },
   mastheadDaily: {
     fontFamily: 'PlayfairDisplay_700Bold',
