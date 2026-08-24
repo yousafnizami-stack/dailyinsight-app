@@ -195,6 +195,11 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           >
             <Ionicons name="chevron-back" size={26} color="#fff" />
           </Pressable>
+          <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
+            <Text style={{ fontFamily: Fonts.playfair, fontSize: 20, fontWeight: '700' }}>
+              <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
+            </Text>
+          </View>
           <View style={styles.headerActions} />
         </View>
         <View style={[styles.centered, { backgroundColor: colors.background }]}>
@@ -216,6 +221,11 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           >
             <Ionicons name="chevron-back" size={26} color="#fff" />
           </Pressable>
+          <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
+            <Text style={{ fontFamily: Fonts.playfair, fontSize: 20, fontWeight: '700' }}>
+              <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
+            </Text>
+          </View>
           <View style={styles.headerActions} />
         </View>
         <View style={[styles.centered, { backgroundColor: colors.background }]}>
@@ -244,6 +254,11 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
         >
           <Ionicons name="chevron-back" size={26} color="#fff" />
         </Pressable>
+        <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
+          <Text style={{ fontFamily: Fonts.playfair, fontSize: 20, fontWeight: '700' }}>
+            <Text style={{ color: '#fff' }}>Daily</Text><Text style={{ color: '#D4AF37' }}>Insight</Text>
+          </Text>
+        </View>
         <View style={styles.headerActions}>
           {article && (
             <Pressable
