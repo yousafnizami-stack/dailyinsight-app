@@ -427,7 +427,6 @@ export function HoroscopeScene({
               gap: 12,
             }}
           >
-            <ZodiacIcon sign={selectedSign} color="white" size={40} />
             <View>
               <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>
                 {currentZodiac.name}
