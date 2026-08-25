@@ -869,13 +869,30 @@ function BlockNode({
     const naturalHeight: number | undefined = media.height;
     const aspectRatio =
       naturalWidth && naturalHeight ? naturalWidth / naturalHeight : 16 / 9;
+    const caption = (media.caption ?? node.fields?.caption ?? '').trim();
     return (
-      <Image
-        key={index}
-        source={{ uri: imageUrl }}
-        style={[styles.uploadImage, { aspectRatio }]}
-        resizeMode="contain"
-      />
+      <View key={index}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={[styles.uploadImage, { aspectRatio }]}
+          resizeMode="contain"
+        />
+        {caption ? (
+          <Text
+            style={{
+              fontFamily: Fonts.sourceSerif,
+              fontSize: 13,
+              color: colors.textMuted,
+              paddingHorizontal: 16,
+              paddingTop: 6,
+              paddingBottom: 8,
+              fontStyle: 'italic',
+            }}
+          >
+            {caption}
+          </Text>
+        ) : null}
+      </View>
     );
   }
 
