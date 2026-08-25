@@ -16,6 +16,7 @@ import HorizontalCard from '../components/HorizontalCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import {
   Article,
+  fetchFeaturedArticle,
   fetchLatestArticles,
   fetchArticlesByCategory,
 } from '../lib/api';
@@ -36,7 +37,24 @@ interface Section {
 }
 
 const ALL_SECTION_DEFS: Record<string, { title: string; fetch: () => Promise<Article[]> }> = {
-  latest:        { title: 'Latest',        fetch: () => fetchLatestArticles(6) },
+  latest: {
+    title: 'Latest',
+    fetch: async () => {
+      const featured = await fetchFeaturedArticle();
+      if (!featured) return fetchLatestArticles(6);
+      const params = new URLSearchParams({
+        'where[status][equals]': 'published',
+        'where[slug][not_equals]': featured.slug,
+        sort: '-publishedAt',
+        limit: '5',
+        depth: '0',
+      });
+      const res = await fetch(`https://admin.dailyinsight.co.uk/api/articles?${params.toString()}`);
+      if (!res.ok) return fetchLatestArticles(6);
+      const data = await res.json();
+      return [featured, ...data.docs];
+    },
+  },
   royals:        { title: 'Royals',        fetch: () => fetchArticlesByCategory('royals', 6) },
   celebrity:     { title: 'Celebrity',     fetch: () => fetchArticlesByCategory('celebrity', 6) },
   fashion:       { title: 'Fashion',       fetch: () => fetchArticlesByCategory('fashion', 6) },

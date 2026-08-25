@@ -119,6 +119,24 @@ export async function searchArticles(
   return { docs: data.docs, totalPages: data.totalPages };
 }
 
+export async function fetchFeaturedArticle(): Promise<Article | null> {
+  const params = new URLSearchParams({
+    'where[featured][equals]': 'true',
+    'where[status][equals]': 'published',
+    sort: '-publishedAt',
+    limit: '1',
+    depth: '0',
+  });
+
+  const res = await fetch(`${BASE_URL}/articles?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+
+  const data: ArticlesResponse = await res.json();
+  return data.docs[0] ?? null;
+}
+
 export async function fetchLatestArticles(limit: number = 6): Promise<Article[]> {
   const params = new URLSearchParams({
     'where[status][equals]': 'published',
