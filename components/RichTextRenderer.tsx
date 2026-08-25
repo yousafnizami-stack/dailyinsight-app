@@ -303,7 +303,7 @@ function InstagramEmbed({ shortcode }: { shortcode: string }) {
         style={styles.webview}
         scrollEnabled={false}
         onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
+        onLoadEnd={() => setTimeout(() => setLoading(false), 2500)}
       />
       {loading && (
         <View style={styles.loadingOverlay}>
