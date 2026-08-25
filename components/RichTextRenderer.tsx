@@ -277,6 +277,7 @@ function YouTubeEmbed({ videoId }: { videoId: string }) {
 
 function InstagramEmbed({ shortcode }: { shortcode: string }) {
   const [loading, setLoading] = useState(true);
+  const [webviewHeight, setWebviewHeight] = useState(600);
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -294,14 +295,62 @@ function InstagramEmbed({ shortcode }: { shortcode: string }) {
     data-instgrm-version="14"
   ></blockquote>
   <script async src="https://www.instagram.com/embed.js"></script>
+  <script>
+    // Use a MutationObserver to detect when embed.js replaces the blockquote with an iframe,
+    // then wait for the iframe to finish loading and report the real scrollHeight to RN.
+    (function() {
+      function postHeight() {
+        try {
+          var h = document.body.scrollHeight;
+          if (h > 0 && window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ tag: 'IG_HEIGHT', payload: h }));
+          }
+        } catch(e) {}
+      }
+
+      var observer = new MutationObserver(function(mutations) {
+        var iframe = document.querySelector('iframe.instagram-media');
+        if (iframe) {
+          observer.disconnect();
+          // Wait for the iframe src to load, then report height
+          iframe.addEventListener('load', function() {
+            setTimeout(postHeight, 500);
+          });
+          // Fallback: report after a delay even if load event doesn't fire
+          setTimeout(postHeight, 3000);
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // Final safety fallback
+      setTimeout(postHeight, 6000);
+    })();
+  </script>
 </body>
 </html>`;
+
+  function handleWebViewMessage(event: WebViewMessageEvent) {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data) as { tag: string; payload: unknown };
+      if (msg.tag === 'IG_HEIGHT' && typeof msg.payload === 'number' && msg.payload > 0) {
+        setWebviewHeight(msg.payload);
+      }
+      console.log(`[IG-DIAG][${msg.tag}]`, JSON.stringify(msg.payload));
+    } catch (e) {
+      console.log('[IG-DIAG][RAW]', event.nativeEvent.data);
+    }
+  }
+
   return (
-    <View style={styles.instagramContainer}>
+    <View style={[styles.instagramContainer, { height: webviewHeight }]}>
       <WebView
         source={{ html }}
         style={styles.webview}
         scrollEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onMessage={handleWebViewMessage}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setTimeout(() => setLoading(false), 2500)}
       />
