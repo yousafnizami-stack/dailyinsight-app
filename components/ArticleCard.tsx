@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Article } from '../lib/api';
 import { Fonts } from '../lib/fonts';
@@ -26,6 +26,7 @@ export default function ArticleCard({
   onSave,
 }: Props) {
   const { colors } = useTheme();
+  const [contentFit, setContentFit] = useState<'cover' | 'contain'>('cover');
 
   return (
     <Pressable
@@ -38,8 +39,12 @@ export default function ArticleCard({
           <Image
             source={{ uri: article.featuredImageUrl }}
             style={styles.cardImage}
-            contentFit="cover"
+            contentFit={contentFit}
             transition={200}
+            onLoad={(e) => {
+              const { width, height } = e.source;
+              if (width / height > 1.9) setContentFit('contain');
+            }}
           />
         ) : (
           <View style={[styles.cardImage, { backgroundColor: colors.accent }]} />
