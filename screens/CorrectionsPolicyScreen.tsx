@@ -24,10 +24,10 @@ function SectionHeading({ title, colors }: { title: string; colors: any }) {
 }
 
 export default function CorrectionsPolicyScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
