@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Article } from '../lib/api';
 import { Fonts } from '../lib/fonts';
@@ -23,7 +23,6 @@ export default function HeroCard({
   showTopDivider = false,
 }: Props) {
   const { colors } = useTheme();
-  const [contentFit, setContentFit] = useState<'cover' | 'contain'>('cover');
 
   return (
     <View style={[styles.cardWrapper, { backgroundColor: colors.card }]}>
@@ -41,12 +40,8 @@ export default function HeroCard({
             <Image
               source={{ uri: article.featuredImageUrl }}
               style={styles.image}
-              contentFit={contentFit}
+              contentFit="cover"
               transition={200}
-              onLoad={(e) => {
-                const { width, height } = e.source;
-                if (width / height > 1.9) setContentFit('contain');
-              }}
             />
           ) : (
             <View style={[styles.image, { backgroundColor: colors.accent }]} />
