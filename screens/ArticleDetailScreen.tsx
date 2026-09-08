@@ -79,7 +79,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   } = route.params;
 
   const hasPreview = Boolean(previewTitle);
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { fontScale } = useTextSize();
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -186,7 +186,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   // Only show full-page loading spinner if no preview data available (e.g. deep links)
   if (loading && !hasPreview) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#C8102E' }]} edges={['top']}>
         <View style={styles.customHeader}>
           <Pressable
             onPress={() => navigation.goBack()}
@@ -212,7 +212,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   // Error state — only show if we also have no article and no preview to show
   if ((error || (!loading && !article)) && !hasPreview) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#C8102E' }]} edges={['top']}>
         <View style={styles.customHeader}>
           <Pressable
             onPress={() => navigation.goBack()}

@@ -159,7 +159,7 @@ const SPRING = { damping: 20, stiffness: 200, mass: 0.5 };
 // ---------------------------------------------------------------------------
 
 export default function EditTimelinesScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [data, setData] = useState<string[]>([...DEFAULT_TAB_KEYS]);
 
   // Shared values for gesture coordination — one pair for the whole list
@@ -192,9 +192,9 @@ export default function EditTimelinesScreen({ navigation }: Props) {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
         <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -250,7 +250,6 @@ export default function EditTimelinesScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   header: {
     height: 44,
-    backgroundColor: '#C8102E',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

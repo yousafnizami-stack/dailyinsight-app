@@ -479,7 +479,7 @@ function CategoryScene({
 // HomeScreen — persistent shell: masthead + chip row + TabView
 // ---------------------------------------------------------------------------
 export default function HomeScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const [tabIndex, setTabIndex] = useState(0);
   const [tabRoutes, setTabRoutes] = useState(INITIAL_TAB_ROUTES);
@@ -590,10 +590,10 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {/* Masthead */}
-        <View style={shellStyles.masthead}>
+        <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Text style={shellStyles.mastheadText}>
             <Text style={shellStyles.mastheadDaily}>Daily</Text>
             <Text style={shellStyles.mastheadInsight}>Insight</Text>
@@ -621,7 +621,6 @@ export default function HomeScreen({ navigation }: Props) {
 // ---------------------------------------------------------------------------
 const shellStyles = StyleSheet.create({
   masthead: {
-    backgroundColor: '#C8102E',
     paddingBottom: 12,
     alignItems: 'center',
   },

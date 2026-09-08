@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function SearchScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   const [query, setQuery] = useState('');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -96,10 +96,10 @@ export default function SearchScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* DI Masthead */}
-        <View style={styles.masthead}>
+        <View style={[styles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Text style={styles.mastheadText}>
             <Text style={styles.mastheadDaily}>Daily</Text>
             <Text style={styles.mastheadInsight}>Insight</Text>
@@ -167,7 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   masthead: {
-    backgroundColor: '#C8102E',
     paddingBottom: 12,
     alignItems: 'center',
   },

@@ -34,7 +34,7 @@ function savedToArticle(saved: SavedArticle): Article {
 }
 
 export default function SavedScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([]);
 
   useFocusEffect(
@@ -49,7 +49,7 @@ export default function SavedScreen({ navigation }: Props) {
   }, []);
 
   const renderHeader = () => (
-    <View style={styles.masthead}>
+    <View style={[styles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
       <Text style={styles.mastheadText}>
         <Text style={styles.mastheadDaily}>Daily</Text>
         <Text style={styles.mastheadInsight}>Insight</Text>
@@ -59,7 +59,7 @@ export default function SavedScreen({ navigation }: Props) {
 
   if (savedArticles.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
         <View style={[styles.screen, { backgroundColor: colors.background }]}>
           {renderHeader()}
           <View style={[styles.empty, { backgroundColor: colors.background }]}>
@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   masthead: {
-    backgroundColor: '#C8102E',
     paddingBottom: 12,
     alignItems: 'center',
     position: 'relative',

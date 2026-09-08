@@ -31,12 +31,12 @@ interface Props {
 
 
 export default function SettingsScreen({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#C8102E' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
       {/* DI wordmark masthead */}
-      <View style={styles.masthead}>
+      <View style={[styles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
         <Text style={styles.mastheadText}>
           <Text style={styles.mastheadDaily}>Daily</Text>
           <Text style={styles.mastheadInsight}>Insight</Text>
@@ -112,7 +112,6 @@ export default function SettingsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   masthead: {
-    backgroundColor: '#C8102E',
     paddingBottom: 12,
     alignItems: 'center',
   },
