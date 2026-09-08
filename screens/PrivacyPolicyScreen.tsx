@@ -38,8 +38,6 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
         >
           <Ionicons name="chevron-back" size={26} color="#fff" />
         </Pressable>
-        <Text style={styles.headerTitle}>Privacy Policy</Text>
-        <View style={styles.headerButton} />
       </View>
 
       <ScrollView
@@ -348,13 +346,6 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 18,
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
   },
   content: {
     padding: 20,
