@@ -187,7 +187,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   if (loading && !hasPreview) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#C8102E' }]} edges={['top']}>
-        <View style={styles.customHeader}>
+        <View style={[styles.customHeader, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Pressable
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -213,7 +213,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   if ((error || (!loading && !article)) && !hasPreview) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#C8102E' }]} edges={['top']}>
-        <View style={styles.customHeader}>
+        <View style={[styles.customHeader, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Pressable
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -244,9 +244,9 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#C8102E' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#C8102E' }]} edges={['top']}>
       {/* Custom header — renders immediately, no article dependency for back button */}
-      <View style={styles.customHeader}>
+      <View style={[styles.customHeader, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
         <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -411,7 +411,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    backgroundColor: '#C8102E',
   },
   headerButton: {
     width: 40,
