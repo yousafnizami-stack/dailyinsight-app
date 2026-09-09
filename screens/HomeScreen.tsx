@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabView, NavigationState, SceneRendererProps } from 'react-native-tab-view';
 import HeroCard from '../components/HeroCard';
@@ -594,10 +598,47 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {/* Masthead */}
         <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
-          <Text style={shellStyles.mastheadText}>
+          <Pressable
+            onPress={() => Linking.openURL('https://www.dailyinsight.co.uk')}
+            style={[
+              shellStyles.mastheadIconBtn,
+              { borderColor: isDark ? colors.border : 'rgba(255,255,255,0.3)' },
+            ]}
+          >
+            <Ionicons
+              name="globe-outline"
+              size={20}
+              color={isDark ? colors.text : '#FFFFFF'}
+            />
+          </Pressable>
+
+          <Text style={[shellStyles.mastheadText, shellStyles.mastheadTextAbsolute]}>
             <Text style={shellStyles.mastheadDaily}>Daily</Text>
             <Text style={shellStyles.mastheadInsight}>Insight</Text>
           </Text>
+
+          <Pressable
+            onPress={() =>
+              Share.share({
+                message:
+                  'Check out the Daily Insight app — Royal, Celebrity & Entertainment news, updated daily.',
+                url:
+                  Platform.OS === 'ios'
+                    ? 'https://apps.apple.com/app/dailyinsight/id6799170199'
+                    : 'https://play.google.com/store/apps/details?id=com.dailyinsight.app',
+              })
+            }
+            style={[
+              shellStyles.mastheadIconBtn,
+              { borderColor: isDark ? colors.border : 'rgba(255,255,255,0.3)' },
+            ]}
+          >
+            <Ionicons
+              name="share-outline"
+              size={20}
+              color={isDark ? colors.text : '#FFFFFF'}
+            />
+          </Pressable>
         </View>
 
         {/* TabView fills remaining height; chip row is rendered via renderTabBar */}
@@ -622,11 +663,28 @@ export default function HomeScreen({ navigation }: Props) {
 const shellStyles = StyleSheet.create({
   masthead: {
     paddingBottom: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   mastheadText: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 32,
+  },
+  mastheadTextAbsolute: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+  },
+  mastheadIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mastheadDaily: {
     fontFamily: 'PlayfairDisplay_700Bold',
