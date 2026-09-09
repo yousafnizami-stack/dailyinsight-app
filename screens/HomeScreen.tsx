@@ -618,7 +618,7 @@ export default function HomeScreen({ navigation }: Props) {
             />
           </Pressable>
 
-          <Text style={[shellStyles.mastheadText, shellStyles.mastheadTextAbsolute]}>
+          <Text style={[shellStyles.mastheadText, shellStyles.mastheadTextAbsolute]} pointerEvents="none">
             <Text style={shellStyles.mastheadDaily}>Daily</Text>
             <Text style={shellStyles.mastheadInsight}>Insight</Text>
           </Text>
