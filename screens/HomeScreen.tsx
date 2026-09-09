@@ -668,7 +668,7 @@ export default function HomeScreen({ navigation }: Props) {
 // ---------------------------------------------------------------------------
 const shellStyles = StyleSheet.create({
   masthead: {
-    paddingBottom: 12,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
