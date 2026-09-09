@@ -106,10 +106,10 @@ export default function SettingsScreen({ navigation }: Props) {
           >
             <Ionicons name="logo-instagram" size={28} color={colors.text} />
           </Pressable>
-          <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, fontFamily: Fonts.barlow, letterSpacing: 0.3, marginTop: 12 }}>
-            Daily Insight · Version {version}
-          </Text>
         </View>
+        <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, fontFamily: Fonts.barlow, letterSpacing: 0.3, marginTop: 12 }}>
+          Daily Insight · Version {version}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
