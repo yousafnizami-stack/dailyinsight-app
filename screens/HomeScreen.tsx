@@ -599,7 +599,13 @@ export default function HomeScreen({ navigation }: Props) {
         {/* Masthead */}
         <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Pressable
-            onPress={() => Linking.openURL('https://www.dailyinsight.co.uk')}
+            onPress={async () => {
+              const url = "https://www.dailyinsight.co.uk";
+              const supported = await Linking.canOpenURL(url);
+              if (supported) {
+                await Linking.openURL(url);
+              }
+            }}
             style={[
               shellStyles.mastheadIconBtn,
               { borderColor: isDark ? colors.border : 'rgba(255,255,255,0.3)' },
