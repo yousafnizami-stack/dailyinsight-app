@@ -264,7 +264,7 @@ export function HoroscopeScene({
 }: {
   scrollRef?: React.RefObject<ScrollView | null>;
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [horoscope, setHoroscope] = useState<HoroscopeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSign, setSelectedSign] = useState('aries');
@@ -338,21 +338,19 @@ export function HoroscopeScene({
       <View
         style={{
           backgroundColor: horoscope.isFallback
-            ? 'rgba(245,158,11,0.15)'
-            : 'rgba(200,16,46,0.08)',
-          borderLeftWidth: 3,
-          borderLeftColor: horoscope.isFallback ? '#F59E0B' : '#C8102E',
+            ? (isDark ? 'transparent' : 'rgba(245,158,11,0.15)')
+            : (isDark ? 'transparent' : 'rgba(200,16,46,0.08)'),
           margin: 16,
           padding: 12,
           borderRadius: 6,
         }}
       >
         {horoscope.isFallback ? (
-          <Text style={{ color: '#F59E0B', fontSize: 13 }}>
+          <Text style={{ color: isDark ? '#FFFFFF' : '#F59E0B', fontSize: 13, textAlign: 'center' }}>
             Showing {readingDateFormatted}'s reading — today's will be along shortly
           </Text>
         ) : (
-          <Text style={{ color: '#C8102E', fontSize: 13, fontWeight: '600' }}>
+          <Text style={{ color: isDark ? '#FFFFFF' : '#C8102E', fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
             {readingDateFormatted}
           </Text>
         )}
