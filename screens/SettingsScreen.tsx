@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import React from 'react';
 import {
   Linking,
@@ -32,6 +33,7 @@ interface Props {
 
 export default function SettingsScreen({ navigation }: Props) {
   const { colors, isDark } = useTheme();
+  const version = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? colors.background : '#C8102E' }} edges={['top']}>
@@ -104,6 +106,9 @@ export default function SettingsScreen({ navigation }: Props) {
           >
             <Ionicons name="logo-instagram" size={28} color={colors.text} />
           </Pressable>
+          <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, fontFamily: Fonts.barlow, letterSpacing: 0.3, marginTop: 12 }}>
+            Daily Insight · Version {version}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
