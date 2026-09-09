@@ -600,10 +600,10 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
           <Pressable
             onPress={async () => {
-              const url = "https://www.dailyinsight.co.uk";
-              const supported = await Linking.canOpenURL(url);
-              if (supported) {
-                await Linking.openURL(url);
+              try {
+                await Linking.openURL("https://www.dailyinsight.co.uk");
+              } catch (e) {
+                console.warn("Could not open URL", e);
               }
             }}
             style={[
