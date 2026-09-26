@@ -13,6 +13,7 @@ export interface Article {
   categoryName?: string;
   categorySlug?: string;
   featuredImageUrl?: string;
+  featuredVideoUrl?: string;
   body?: any; // Payload lexical JSON
   embeds?: Array<{
     id?: string;

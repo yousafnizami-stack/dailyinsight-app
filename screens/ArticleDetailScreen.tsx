@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import RichTextRenderer from '../components/RichTextRenderer';
 import { Article, fetchArticleBySlug, fetchRelatedArticles } from '../lib/api';
 import { timeAgo } from '../lib/timeAgo';
@@ -58,6 +59,20 @@ const AUTHOR_LABELS: Record<string, string> = {
   'rachel-hinds': 'Rachel Hinds',
   'priya-nair': 'Priya Nair',
 };
+
+function extractYouTubeId(url: string): string | null {
+  const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+  return null;
+}
+
+function getYouTubeHtml(videoId: string): string {
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%}iframe{width:100%;height:100%;border:0;display:block}</style></head><body><iframe src="https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></body></html>`;
+}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -293,17 +308,33 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           />
         }
       >
-        {/* Featured image — shown immediately from preview params */}
-        {displayImage ? (
-          <ExpoImage
-            source={{ uri: displayImage }}
-            style={styles.heroImage}
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />
-        )}
+        {/* Featured video or image — video only shown when article has featuredVideoUrl with a valid YouTube ID */}
+        {(() => {
+          const videoId = article?.featuredVideoUrl ? extractYouTubeId(article.featuredVideoUrl) : null;
+          if (videoId) {
+            return (
+              <WebView
+                source={{ html: getYouTubeHtml(videoId) }}
+                style={styles.heroImage}
+                allowsInlineMediaPlayback
+                mediaPlaybackRequiresUserAction
+                scrollEnabled={false}
+                javaScriptEnabled
+              />
+            );
+          }
+          if (displayImage) {
+            return (
+              <ExpoImage
+                source={{ uri: displayImage }}
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={200}
+              />
+            );
+          }
+          return <View style={[styles.heroImage, { backgroundColor: colors.accent }]} />;
+        })()}
 
         <View style={styles.header}>
           {/* Eyebrow: category */}
