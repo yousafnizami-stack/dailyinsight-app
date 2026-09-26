@@ -513,6 +513,10 @@ export default function HomeScreen({ navigation }: Props) {
   // scroll Latest back to the top. Otherwise just navigate to Latest.
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabPress', () => {
+      // Only act when the screen is already focused — this distinguishes a
+      // deliberate tab-bar tap (screen focused) from gaining focus via back
+      // navigation (screen not yet focused when the event fires).
+      if (!navigation.isFocused()) return;
       if (tabIndexRef.current === 0) {
         const key = tabRoutesRef.current[0]?.key;
         if (key) {
