@@ -500,8 +500,13 @@ export default function HomeScreen({ navigation }: Props) {
   useEffect(() => {
     const refresh = () => {
       loadTabOrder().then((keys) => {
-        setTabRoutes(buildRoutes(keys));
-        setTabIndex(0); // reset to first tab whenever order changes
+        const newRoutes = buildRoutes(keys);
+        const currentKeys = tabRoutesRef.current.map((r) => r.key).join(',');
+        const newKeys = newRoutes.map((r) => r.key).join(',');
+        setTabRoutes(newRoutes);
+        if (newKeys !== currentKeys) {
+          setTabIndex(0); // reset to first tab only when order genuinely changed
+        }
       });
     };
     refresh();
