@@ -316,10 +316,15 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
               <WebView
                 source={{ html: getYouTubeHtml(videoId) }}
                 style={styles.heroImage}
-                allowsInlineMediaPlayback
+                allowsInlineMediaPlayback={true}
                 mediaPlaybackRequiresUserAction={false}
                 scrollEnabled={false}
-                javaScriptEnabled
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                originWhitelist={["*"]}
+                mixedContentMode="always"
+                allowsFullscreenVideo={true}
+                userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
               />
             );
           }
