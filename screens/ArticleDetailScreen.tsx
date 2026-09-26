@@ -71,7 +71,7 @@ function extractYouTubeId(url: string): string | null {
 }
 
 function getYouTubeHtml(videoId: string): string {
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%}iframe{width:100%;height:100%;border:0;display:block}</style></head><body><iframe src="https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></body></html>`;
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%}iframe{width:100%;height:100%;border:0;display:block}</style></head><body><iframe src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=en&enablejsapi=1&origin=https://www.dailyinsight.co.uk" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></body></html>`;
 }
 
 function formatDate(dateString: string): string {
@@ -314,17 +314,33 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
           if (videoId) {
             return (
               <WebView
-                source={{ html: getYouTubeHtml(videoId) }}
+                source={{ html: getYouTubeHtml(videoId), baseUrl: 'https://www.dailyinsight.co.uk' }}
                 style={styles.heroImage}
+                allowsFullscreenVideo={true}
                 allowsInlineMediaPlayback={true}
                 mediaPlaybackRequiresUserAction={false}
-                scrollEnabled={false}
                 javaScriptEnabled={true}
-                domStorageEnabled={true}
-                originWhitelist={["*"]}
-                mixedContentMode="always"
-                allowsFullscreenVideo={true}
-                userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+                cacheEnabled={false}
+                incognito={true}
+                sharedCookiesEnabled={false}
+                thirdPartyCookiesEnabled={false}
+                androidLayerType="hardware"
+                onShouldStartLoadWithRequest={(request) => {
+                  const url = request.url;
+                  if (url === 'about:blank' || url.startsWith('https://www.dailyinsight.co.uk')) {
+                    return true;
+                  }
+                  if (url.includes('youtube.com/embed')) {
+                    return true;
+                  }
+                  if (url.includes('google.com')) {
+                    return true;
+                  }
+                  if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('m.youtube.com')) {
+                    return false;
+                  }
+                  return true;
+                }}
               />
             );
           }
