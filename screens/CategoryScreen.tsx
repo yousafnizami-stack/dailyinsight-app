@@ -92,7 +92,7 @@ export default function CategoryScreen({ route, navigation }: Props) {
           {/* First article in block = HeroCard */}
           <HeroCard
             article={block[0]}
-            onPress={() => navigation.navigate('ArticleDetail', { slug: block[0].slug })}
+            onPress={() => navigation.push('ArticleDetail', { slug: block[0].slug })}
             showAccentBorder={false}
           />
           {/* Remaining 3 = HorizontalCards */}
@@ -100,7 +100,7 @@ export default function CategoryScreen({ route, navigation }: Props) {
             <HorizontalCard
               key={article.id}
               article={article}
-              onPress={() => navigation.navigate('ArticleDetail', { slug: article.slug })}
+              onPress={() => navigation.push('ArticleDetail', { slug: article.slug })}
             />
           ))}
         </View>
