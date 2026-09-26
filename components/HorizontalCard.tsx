@@ -52,7 +52,7 @@ export default function HorizontalCard({
           ) : null}
           <Text
             style={[styles.headline, { color: colors.text, fontFamily: Fonts.sourceSerifSemiBold }]}
-            numberOfLines={4}
+            numberOfLines={5}
           >
             {article.title}
           </Text>

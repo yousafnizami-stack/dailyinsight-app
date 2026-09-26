@@ -57,7 +57,7 @@ export default function HeroCard({
           ) : null}
           <Text
             style={[styles.headline, { color: colors.text, fontFamily: Fonts.playfair }]}
-            numberOfLines={3}
+            numberOfLines={5}
           >
             {article.title}
           </Text>
