@@ -317,7 +317,7 @@ export default function ArticleDetailScreen({ route, navigation }: Props) {
                 source={{ html: getYouTubeHtml(videoId) }}
                 style={styles.heroImage}
                 allowsInlineMediaPlayback
-                mediaPlaybackRequiresUserAction
+                mediaPlaybackRequiresUserAction={false}
                 scrollEnabled={false}
                 javaScriptEnabled
               />
