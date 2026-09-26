@@ -306,7 +306,7 @@ function LatestScene({
                   key={article.id}
                   article={article}
                   onPress={() =>
-                    navigation.navigate('ArticleDetail', {
+                    navigation.push('ArticleDetail', {
                       slug: article.slug,
                       title: article.title,
                       featuredImageUrl: article.featuredImageUrl,
@@ -324,7 +324,7 @@ function LatestScene({
                 key={article.id}
                 article={article}
                 onPress={() =>
-                  navigation.navigate('ArticleDetail', {
+                  navigation.push('ArticleDetail', {
                     slug: article.slug,
                     title: article.title,
                     featuredImageUrl: article.featuredImageUrl,
@@ -445,7 +445,7 @@ function CategoryScene({
           <HeroCard
             article={block[0]}
             onPress={() =>
-              navigation.navigate('ArticleDetail', {
+              navigation.push('ArticleDetail', {
                 slug: block[0].slug,
                 title: block[0].title,
                 featuredImageUrl: block[0].featuredImageUrl,
@@ -462,7 +462,7 @@ function CategoryScene({
               key={article.id}
               article={article}
               onPress={() =>
-                navigation.navigate('ArticleDetail', {
+                navigation.push('ArticleDetail', {
                   slug: article.slug,
                   title: article.title,
                   featuredImageUrl: article.featuredImageUrl,
