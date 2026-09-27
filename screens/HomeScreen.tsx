@@ -607,7 +607,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {/* Masthead */}
         <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
-          <View style={shellStyles.mastheadIconBtn} />
+          <View style={{ width: 36, height: 36 }} />
 
           <Text style={[shellStyles.mastheadText, shellStyles.mastheadTextAbsolute]} pointerEvents="none">
             <Text style={shellStyles.mastheadDaily}>Daily</Text>
