@@ -484,6 +484,7 @@ function CategoryScene({
 export default function HomeScreen({ navigation }: Props) {
   const { colors, isDark } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
+  const initialScreenWidth = useRef(screenWidth);
   const [tabIndex, setTabIndex] = useState(0);
   const [tabRoutes, setTabRoutes] = useState(INITIAL_TAB_ROUTES);
 
@@ -662,7 +663,7 @@ export default function HomeScreen({ navigation }: Props) {
           lazy
           renderLazyPlaceholder={() => <SkeletonLoader />}
           style={{ flex: 1 }}
-          initialLayout={{ width: screenWidth }}
+          initialLayout={{ width: initialScreenWidth.current }}
         />
       </View>
     </SafeAreaView>

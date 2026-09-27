@@ -4,6 +4,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Circle, G, Path, Svg } from 'react-native-svg';
@@ -265,6 +266,8 @@ export function HoroscopeScene({
   scrollRef?: React.RefObject<ScrollView | null>;
 }) {
   const { colors, isDark } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const itemWidth = (screenWidth - 32 - 24) / 4;
   const [horoscope, setHoroscope] = useState<HoroscopeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSign, setSelectedSign] = useState('aries');
@@ -371,7 +374,7 @@ export function HoroscopeScene({
                 key={zodiac.key}
                 onPress={() => setSelectedSign(zodiac.key)}
                 style={{
-                  width: '22%',
+                  width: itemWidth,
                   aspectRatio: 1,
                   alignItems: 'center',
                   justifyContent: 'center',
