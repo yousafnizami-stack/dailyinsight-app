@@ -4,7 +4,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { Circle, G, Path, Svg } from 'react-native-svg';
@@ -266,8 +265,6 @@ export function HoroscopeScene({
   scrollRef?: React.RefObject<ScrollView | null>;
 }) {
   const { colors, isDark } = useTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const itemWidth = (screenWidth - 32 - 24) / 4;
   const [horoscope, setHoroscope] = useState<HoroscopeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSign, setSelectedSign] = useState('aries');
@@ -366,44 +363,50 @@ export function HoroscopeScene({
           paddingTop: horoscope.isFallback ? 8 : 16,
         }}
       >
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {ZODIAC_SIGNS.map((zodiac) => {
-            const isSelected = selectedSign === zodiac.key;
-            return (
-              <Pressable
-                key={zodiac.key}
-                onPress={() => setSelectedSign(zodiac.key)}
-                style={{
-                  width: itemWidth,
-                  aspectRatio: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 12,
-                  backgroundColor: isSelected ? '#C8102E' : colors.card,
-                  borderWidth: isSelected ? 0 : 1,
-                  borderColor: 'rgba(200,16,46,0.2)',
-                  paddingVertical: 8,
-                }}
-              >
-                <ZodiacIcon
-                  sign={zodiac.key}
-                  color={isSelected ? 'white' : colors.text}
-                  size={28}
-                />
-                <Text
+        {[ZODIAC_SIGNS.slice(0, 4), ZODIAC_SIGNS.slice(4, 8), ZODIAC_SIGNS.slice(8, 12)].map((row, rowIndex) => (
+          <View
+            key={rowIndex}
+            style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}
+          >
+            {row.map((zodiac) => {
+              const isSelected = selectedSign === zodiac.key;
+              return (
+                <Pressable
+                  key={zodiac.key}
+                  onPress={() => setSelectedSign(zodiac.key)}
                   style={{
-                    fontSize: 10,
-                    fontWeight: '600',
-                    color: isSelected ? 'rgba(255,255,255,0.9)' : colors.textMuted,
-                    marginTop: 4,
+                    flex: 1,
+                    marginHorizontal: 4,
+                    aspectRatio: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 12,
+                    backgroundColor: isSelected ? '#C8102E' : colors.card,
+                    borderWidth: isSelected ? 0 : 1,
+                    borderColor: 'rgba(200,16,46,0.2)',
+                    paddingVertical: 8,
                   }}
                 >
-                  {zodiac.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                  <ZodiacIcon
+                    sign={zodiac.key}
+                    color={isSelected ? 'white' : colors.text}
+                    size={28}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '600',
+                      color: isSelected ? 'rgba(255,255,255,0.9)' : colors.textMuted,
+                      marginTop: 4,
+                    }}
+                  >
+                    {zodiac.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       {/* Reading card */}
