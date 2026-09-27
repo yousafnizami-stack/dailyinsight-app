@@ -607,23 +607,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {/* Masthead */}
         <View style={[shellStyles.masthead, { backgroundColor: isDark ? colors.background : '#C8102E' }]}>
-          {navigation.canGoBack() ? (
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={[
-                shellStyles.mastheadIconBtn,
-                { borderColor: isDark ? colors.border : 'rgba(255,255,255,0.3)' },
-              ]}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color={isDark ? colors.text : '#FFFFFF'}
-              />
-            </Pressable>
-          ) : (
-            <View style={shellStyles.mastheadIconBtn} />
-          )}
+          <View style={shellStyles.mastheadIconBtn} />
 
           <Text style={[shellStyles.mastheadText, shellStyles.mastheadTextAbsolute]} pointerEvents="none">
             <Text style={shellStyles.mastheadDaily}>Daily</Text>
