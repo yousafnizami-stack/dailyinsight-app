@@ -3,7 +3,7 @@
     "name": "DailyInsight",
     "slug": "dailyinsight-app",
     "version": "1.4.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -28,7 +28,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.dailyinsight.app"
+      "package": "com.dailyinsight.app",
+      "allowBackup": true,
+      "softwareKeyboardLayoutMode": "pan",
+      "configChanges": ["keyboard", "keyboardHidden", "orientation", "screenSize", "uiMode", "smallestScreenSize", "screenLayout"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
